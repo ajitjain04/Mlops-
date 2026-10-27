@@ -14,7 +14,7 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 | M6 Drift detection | done; rule LOCKED (K=17) 2026-10-27 |
 | M7 FastAPI | done (local uvicorn; container is M8) |
 | M8 Docker + local monitoring | done locally (see evidence) |
-| M9 GitHub Actions CI + image publishing | not started |
+| M9 GitHub Actions CI + image publishing | done (deploy workflow is M10) |
 | M10 AWS EC2 deployment | not started |
 | M11 Adaptive loop | not started |
 | M12 Documentation | not started |
@@ -46,8 +46,8 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 - [x] FastAPI health and prediction endpoints work. Evidence (M7): `uvicorn adaptivephish.api.app:app_factory --factory` served V1; GET /health 200 (model v1, feature 1.0.0, 26 features); POST /predict nyc.gov URL -> legitimate (score 0.003), paypal-lookalike -> phishing (0.71), `http://[::1` -> 422; /metrics counters matched those calls; 16 API tests pass (44 total), ruff clean.
 - [ ] Shared feature code and model schema match training. Partial (M7): API uses `extract_features` and `load_production`, which refuses a feature_version mismatch (tested); schema check against the trained model's own input signature not added.
 - [x] Docker image builds and runs. Evidence (M8): `docker compose up -d --build`; image adaptivephish:82da5dc, 1.11 GB on disk (python:3.11-slim, non-root uid 10001, V1 joblib 122 MB baked in, no extra files; `docker history` has no credential strings); container healthcheck `healthy`; /health 200 and /predict 200/422 from the container on 127.0.0.1:8000. Clean-checkout build (needs `dvc pull` for models/v1): unverified.
-- [ ] GitHub Actions CI tests pass.
-- [ ] Image is published to the selected registry.
+- [x] GitHub Actions CI tests pass. Evidence (M9): run 40533354578 on a226708, ruff + 44 pytest (real-V1 test skipped without the model) green on ubuntu/py3.11, no AWS credentials used; image workflow also reran CI via workflow_call.
+- [x] Image is published to the selected registry. Evidence (M9): build-and-push run 40533354628 green (dvc pull with the read-only AWS user, build, container smoke test, push); Docker Hub public API shows 0008a/adaptivephish:a226708 (public repo, linux/amd64, digest sha256:0dce761a...); `docker pull` OK; pulled container: /health model v1 healthy, /predict phishing for a lookalike URL, runs as non-root.
 - [ ] Approved deployment workflow runs.
 - [ ] AWS EC2 service passes health and smoke tests, if cloud access/budget permit.
 - [ ] Deployment version and rollback path are documented.
