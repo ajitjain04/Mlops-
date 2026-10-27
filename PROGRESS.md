@@ -11,7 +11,7 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 | M3 DVC | done (see evidence below) |
 | M4 Shared URL features | done; first consumers arrive in M5/M7 |
 | M5 Experiments A and B + MLflow | done (V1 = random forest); V1 artifact not on DVC remote (see notes) |
-| M6 Drift detection | not started |
+| M6 Drift detection | done; rule is conservative, K choice pending user review |
 | M7 FastAPI | not started |
 | M8 Docker + local monitoring | not started |
 | M9 GitHub Actions CI + image publishing | not started |
@@ -28,7 +28,7 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 - [x] Random-split baseline evaluated. Evidence (M5): `dvc repro` train stage; 4 algorithms x 2 feature sets, best test F1 0.924-0.928 for tree models; `reports/results/experiments_report.md`.
 - [x] Chronological temporal experiment evaluated. Evidence (M5): train Jun-Jul, val Aug, test Sep-Oct 2025; V1 chosen by val F1 only; test F1 0.838 (CI 0.834-0.841).
 - [x] Temporal performance change reported honestly. Evidence (M5): same-algorithm test F1 drops from about 0.92 (random) to about 0.84 (temporal) for tree models; single seed, collection effects not separated from drift (see report).
-- [ ] Drift method, threshold, and decisions documented.
+- [x] Drift method, threshold, and decisions documented. Evidence (M6): `reports/results/drift_report.md`, `drift_calibration.json`; 7 synthetic-fixture tests pass (shifted alerts, unshifted does not); K=17 of 20 calibrated on reference time-block null (3.4% alert rate), 0/10 validation alerts; test period never loaded.
 - [ ] Conditional retraining implemented.
 - [ ] Candidate V2 evaluated against incumbent V1.
 - [ ] Promotion/rejection criteria are explicit and tested.
@@ -56,7 +56,7 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 - [ ] Prometheus scrapes actual service metrics.
 - [ ] Grafana dashboard visualizes those metrics.
 - [ ] Drift monitoring uses URL-derived features and a reference window.
-- [ ] Drift is not incorrectly equated with accuracy loss.
+- [ ] Drift is not incorrectly equated with accuracy loss. Partial (M6): documented in drift_report.md and module docstring; no performance link tested yet.
 - [ ] Candidate retraining and promotion events are traceable.
 - [ ] Rejected candidate leaves incumbent production model intact.
 - [ ] End-to-end replay or production loop is demonstrated honestly.

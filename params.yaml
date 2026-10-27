@@ -33,3 +33,13 @@ train:
       n_estimators: [300]
       num_leaves: [31, 63]
       learning_rate: [0.1]
+
+drift:
+  batch_size: 2000
+  psi_bins: 10
+  psi_threshold: 0.1       # conventional "no meaningful shift" ceiling for PSI
+  alpha: 0.05              # family-wise level, Bonferroni over tested features
+  min_variation: 0.01      # skip features whose non-modal value share is below this
+  null_repeats: 100        # iid hold-out batches drawn from the reference
+  null_block_stride: 500   # stride (rows) of contiguous time blocks inside the reference
+  max_null_alert_rate: 0.05

@@ -50,3 +50,20 @@ stages:
     metrics:
       - reports/results/experiments_summary.json:
           cache: false
+  calibrate_drift:
+    cmd: python scripts/calibrate_drift.py
+    deps:
+      - scripts/calibrate_drift.py
+      - src/adaptivephish/drift.py
+      - src/adaptivephish/features/url_features.py
+      - data/processed/features.parquet
+    params:
+      - drift
+      - train.seed
+    outs:
+      - data/processed/drift_reference.parquet
+      - reports/figures/drift_calibration.png:
+          cache: false
+    metrics:
+      - reports/results/drift_calibration.json:
+          cache: false
