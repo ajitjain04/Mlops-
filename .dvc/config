@@ -1,0 +1,5 @@
+[core]
+    remote = storage
+['remote "storage"']
+    url = s3://adaptivephish-dvc-ajit-2026/dvc
+    region = ap-south-1

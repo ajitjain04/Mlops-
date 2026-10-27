@@ -8,7 +8,7 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 |---|---|
 | M1 Repo and environment | done (see evidence below) |
 | M2 Dataset verification and subset | done except DVC tracking (M3); see evidence below |
-| M3 DVC | in progress: local tracking and pipeline done; remote blocked on user's S3 bucket + `aws configure` |
+| M3 DVC | done except parameters (`params.yaml`) |
 | M4 Shared URL features | not started |
 | M5 Experiments A and B + MLflow | not started |
 | M6 Drift detection | not started |
@@ -37,7 +37,7 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 ### MLOps
 - [x] GitHub repository and reproducible environment. Evidence (M1): `pip install -e .` OK, `pytest` 1 passed, `ruff check .` All checks passed, `git push -u origin main` created `origin/main` (commit db7396c). Python 3.11.4 in `.venv`. Clean-checkout reproduction: unverified.
 - [x] DVC data/artifact tracking. Evidence (M3): DVC 3.67.1, `dvc repro` ran `fetch_meta` and `build_subset`; `dvc.lock` written; subset_sha256 identical to M2 (aa62bfce...); second `dvc repro` skipped both stages, `dvc status` clean.
-- [ ] DVC remote configured and retrieval tested, if storage access is available.
+- [x] DVC remote configured and retrieval tested, if storage access is available. Evidence (M3): remote `s3://adaptivephish-dvc-ajit-2026/dvc` (ap-south-1, profile in gitignored `.dvc/config.local`); `dvc push` 2 files pushed; deleted `data/interim`, `data/processed` and `.dvc/cache`, `dvc pull` fetched 2 files, sha256 of both identical to before, `dvc status` clean.
 - [ ] Reproducible DVC pipeline and parameters.
 - [ ] MLflow runs record parameters, metrics, and artifacts.
 - [ ] Data/code/feature/model/deployment versions are traceable.
@@ -70,4 +70,4 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 
 ## Environment notes
 
-- Docker: `docker run hello-world` OK. AWS CLI 2.38.6 present (re-checked 2026-10-27). DVC: not yet installed (M3). AWS credentials/`aws sts get-caller-identity`: unverified.
+- Docker: `docker run hello-world` OK. AWS CLI 2.38.6 present (re-checked 2026-10-27). DVC 3.67.1 installed. AWS profile `adaptivephish` verified by user (sts and s3 ls OK); I did not run those myself.
