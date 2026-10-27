@@ -39,3 +39,25 @@ Phishing URLs change over time, so a model that was accurate on old data can get
 A drift alert does not deploy a new model automatically. It only triggers retraining, and the new model must beat the current one on a validation window and pass fixed checks before it is promoted. Otherwise the current model stays in production.
 
 The whole lifecycle is versioned and automated: data with DVC, experiments with MLflow, builds with GitHub Actions, serving with Docker on AWS, and monitoring with Prometheus and Grafana.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  A[PhreshPhish dataset] --> B[Subset and splits<br/>DVC + S3]
+  B --> C[URL features]
+  C --> D[Training<br/>MLflow tracking]
+  D --> E[Production model v1]
+  E --> F[FastAPI service]
+  F --> G[Docker image]
+  G --> H[GitHub Actions<br/>CI and build]
+  H --> I[Docker Hub]
+  I --> J[AWS EC2]
+  F --> K[Prometheus]
+  K --> L[Grafana dashboard]
+  C --> M[Drift check]
+  M -->|drift alert| N[Retrain candidate]
+  N --> O{Better than<br/>current model?}
+  O -->|yes| E
+  O -->|no| P[Keep current model]
+```
