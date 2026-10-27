@@ -1,0 +1,35 @@
+schema: '2.0'
+stages:
+  fetch_meta:
+    cmd: python scripts/inspect_dataset.py --out 
+      data/interim/phreshphish_meta.parquet
+    deps:
+    - path: scripts/inspect_dataset.py
+      hash: md5
+      md5: fe784f462cfaf04af3003b51457c9db2
+      size: 1616
+    outs:
+    - path: data/interim/phreshphish_meta.parquet
+      hash: md5
+      md5: d52dd484b3504a2d1c0cf91cabd1e78e
+      size: 45974265
+  build_subset:
+    cmd: python scripts/build_subset.py
+    deps:
+    - path: data/interim/phreshphish_meta.parquet
+      hash: md5
+      md5: d52dd484b3504a2d1c0cf91cabd1e78e
+      size: 45974265
+    - path: scripts/build_subset.py
+      hash: md5
+      md5: 748968352225f7303fdbc6f14e66f70c
+      size: 3409
+    outs:
+    - path: data/processed/subset.parquet
+      hash: md5
+      md5: 36930342626ed86654fc3ea6749b80b8
+      size: 8940234
+    - path: reports/results/subset_manifest.json
+      hash: md5
+      md5: 9a7b6d6dc2ce9911a370528977956c96
+      size: 1219

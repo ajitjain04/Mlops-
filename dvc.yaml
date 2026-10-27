@@ -1,0 +1,17 @@
+stages:
+  fetch_meta:
+    cmd: python scripts/inspect_dataset.py --out data/interim/phreshphish_meta.parquet
+    deps:
+      - scripts/inspect_dataset.py
+    outs:
+      - data/interim/phreshphish_meta.parquet
+  build_subset:
+    cmd: python scripts/build_subset.py
+    deps:
+      - scripts/build_subset.py
+      - data/interim/phreshphish_meta.parquet
+    outs:
+      - data/processed/subset.parquet
+    metrics:
+      - reports/results/subset_manifest.json:
+          cache: false

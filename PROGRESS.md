@@ -8,7 +8,7 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 |---|---|
 | M1 Repo and environment | done (see evidence below) |
 | M2 Dataset verification and subset | done except DVC tracking (M3); see evidence below |
-| M3 DVC | not started |
+| M3 DVC | in progress: local tracking and pipeline done; remote blocked on user's S3 bucket + `aws configure` |
 | M4 Shared URL features | not started |
 | M5 Experiments A and B + MLflow | not started |
 | M6 Drift detection | not started |
@@ -36,7 +36,7 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 
 ### MLOps
 - [x] GitHub repository and reproducible environment. Evidence (M1): `pip install -e .` OK, `pytest` 1 passed, `ruff check .` All checks passed, `git push -u origin main` created `origin/main` (commit db7396c). Python 3.11.4 in `.venv`. Clean-checkout reproduction: unverified.
-- [ ] DVC data/artifact tracking.
+- [x] DVC data/artifact tracking. Evidence (M3): DVC 3.67.1, `dvc repro` ran `fetch_meta` and `build_subset`; `dvc.lock` written; subset_sha256 identical to M2 (aa62bfce...); second `dvc repro` skipped both stages, `dvc status` clean.
 - [ ] DVC remote configured and retrieval tested, if storage access is available.
 - [ ] Reproducible DVC pipeline and parameters.
 - [ ] MLflow runs record parameters, metrics, and artifacts.
