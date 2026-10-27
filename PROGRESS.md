@@ -78,7 +78,21 @@ Arms to run and report together on the same test-period batches (`params.yaml` `
 3. **adaptive_sensitivity**: same as primary with K=10.
 4. **fixed_monthly**: retrain on a fixed monthly schedule regardless of drift; same acceptance rules.
 
-All arms report the same metrics whatever the outcome, including the number of retrains, accepted and rejected candidates, and performance trajectories. Acceptance criteria for promotion are to be written before the replay starts and recorded here.
+All arms report the same metrics whatever the outcome, including the number of retrains, accepted and rejected candidates, and performance trajectories.
+
+### Replay design and promotion criteria (approved by the user and locked 2026-10-27, before any replay code)
+
+Machine-readable copy: `params.yaml` `replay` section; its hash plus `drift.locked` is in `reports/results/replay_lock.json`. `src/adaptivephish/replay_lock.py` `verify()` makes the replay refuse to run if the locked values changed, if the lock file has uncommitted edits, or if results exist from a different lock (7 tests).
+
+- Replay: test window (Sep-Oct 2025) in 2,000-row batches in time order; every batch is scored by the model in production at that moment (prequential), never re-scored later.
+- Label delay D=1: labels of batch j become usable after batch j+1 is scored. At a decision after batch i: labelled batches are <= i-1; gate set = batches i-2 and i-1; threshold batch = i-3; training = train + validation windows + replayed batches <= i-4.
+- Candidate: random forest with V1's exact hyperparameters, no search; threshold = max F1 on the threshold batch.
+- Cooldown: at most one retrain attempt per 3 batches. Triggers: primary K=17, sensitivity K=10, fixed arm at the first batch of each calendar month. Same acceptance rules for all adaptive arms.
+- Promote only if ALL hold on the gate set (each model at its own threshold): (1) candidate F1 >= incumbent F1 + 0.01; (2) paired bootstrap of the F1 difference (1,000 resamples, seed 42) has a 95% interval lower bound > 0; (3) candidate FPR <= incumbent FPR + 0.02 and <= 0.25 absolute; (4) candidate recall >= incumbent recall - 0.02; (5) feature_version matches serving code and the candidate loads and scores a fixed canary URL set.
+- Otherwise reject: the incumbent stays untouched, the reason is logged, no retry with other settings.
+- All arms report the same things whatever happens: per-batch F1/recall/FPR and cumulative values, counts of alerts, attempts, promotions and rejections, labels consumed, retraining compute time. Results are reported even if adaptive arms never promote or never beat static.
+- Stated limits: the gate set is made of the replay's own past batches (decisions use only past data, but it is one replay of one dataset with one seed); the dataset's class/date confounding remains; a drift alert means "investigate", not accuracy loss.
+- Not in scope: Prometheus/Grafana on EC2 (documented as a limitation); local compose stack gets the new drift/retraining panels.
 
 ## Environment notes
 

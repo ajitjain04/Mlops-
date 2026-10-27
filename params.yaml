@@ -51,10 +51,37 @@ drift:
     correction: bonferroni     # over tested features, family-wise alpha below
     alpha: 0.05
 
-# Pre-registered arms for the M11 replay on the held-out test period (fixed 2026-10-27).
+# Pre-registered M11 replay design and promotion criteria. Approved and locked 2026-10-27, before any
+# replay code or test-period replay result existed. Everything under `replay` plus `drift.locked` is hashed into
+# reports/results/replay_lock.json; the replay refuses to run if the hash differs (see replay_lock.py).
 replay:
+  batch_size: 2000             # rows per replayed batch, in time order over the test window
+  label_delay_batches: 1       # D: labels of batch j are usable only once batch j+1 has been scored
+  # At a decision after scoring batch i, labelled batches are <= i-D (D=1 gives <= i-1):
+  #   gate set = the two most recent labelled batches (i-2, i-1), never used for training or threshold choice
+  #   threshold batch = the third most recent labelled batch (i-3)
+  #   training = train + validation windows + replayed batches <= i-4
+  gate_batches: 2
+  threshold_batches: 1
+  cooldown_batches: 3          # at most one retrain attempt per 3 batches
+  candidate:
+    algorithm: random_forest   # V1's algorithm and exact hyperparameters, no search
+    hyperparameters: same_as_v1
+    threshold_rule: max_f1_on_threshold_batch
+  promotion:                   # ALL must hold on the gate set (incumbent and candidate each at their own threshold)
+    f1_margin: 0.01            # candidate F1 >= incumbent F1 + margin
+    bootstrap_resamples: 1000  # paired bootstrap of the F1 difference
+    bootstrap_seed: 42
+    bootstrap_ci_level: 0.95   # lower bound of the interval must be > 0
+    fpr_margin: 0.02           # candidate FPR <= incumbent FPR + margin
+    fpr_cap: 0.25              # and FPR <= cap in absolute terms
+    recall_margin: 0.02        # candidate recall >= incumbent recall - margin
+    require_feature_version_match: true
+    require_canary_ok: true    # loads and scores the fixed canary URL set without error
+  on_reject: keep_incumbent    # log the reason; no retry with different settings
   arms:
     - {name: static_v1, trigger: none}
     - {name: adaptive_primary, trigger: drift, min_drifted_features: 17}
     - {name: adaptive_sensitivity, trigger: drift, min_drifted_features: 10}
+    # first batch whose first row falls in a new calendar month; same acceptance rules
     - {name: fixed_monthly, trigger: schedule, period: monthly}

@@ -1,0 +1,57 @@
+{
+  "locked_at": "2026-10-27",
+  "section": {
+    "drift_locked": {
+      "alpha": 0.05,
+      "correction": "bonferroni",
+      "min_drifted_features": 17,
+      "psi_threshold": 0.1
+    },
+    "replay": {
+      "arms": [
+        {
+          "name": "static_v1",
+          "trigger": "none"
+        },
+        {
+          "min_drifted_features": 17,
+          "name": "adaptive_primary",
+          "trigger": "drift"
+        },
+        {
+          "min_drifted_features": 10,
+          "name": "adaptive_sensitivity",
+          "trigger": "drift"
+        },
+        {
+          "name": "fixed_monthly",
+          "period": "monthly",
+          "trigger": "schedule"
+        }
+      ],
+      "batch_size": 2000,
+      "candidate": {
+        "algorithm": "random_forest",
+        "hyperparameters": "same_as_v1",
+        "threshold_rule": "max_f1_on_threshold_batch"
+      },
+      "cooldown_batches": 3,
+      "gate_batches": 2,
+      "label_delay_batches": 1,
+      "on_reject": "keep_incumbent",
+      "promotion": {
+        "bootstrap_ci_level": 0.95,
+        "bootstrap_resamples": 1000,
+        "bootstrap_seed": 42,
+        "f1_margin": 0.01,
+        "fpr_cap": 0.25,
+        "fpr_margin": 0.02,
+        "recall_margin": 0.02,
+        "require_canary_ok": true,
+        "require_feature_version_match": true
+      },
+      "threshold_batches": 1
+    }
+  },
+  "sha256": "3127dc139e3a54802466636a8421f862b78245c5c56249bde92ef69b0020e011"
+}
