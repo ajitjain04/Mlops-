@@ -16,7 +16,7 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 | M8 Docker + local monitoring | done locally (see evidence) |
 | M9 GitHub Actions CI + image publishing | done (deploy workflow is M10) |
 | M10 AWS EC2 deployment | done (see evidence); docs in docs/deployment.md |
-| M11 Adaptive loop | not started |
+| M11 Adaptive loop | replay done and reported (see evidence); dashboard/metrics verified locally; README/final docs are M12 |
 | M12 Documentation | not started |
 
 ## Acceptance checklist (spec section 22)
@@ -29,10 +29,10 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 - [x] Chronological temporal experiment evaluated. Evidence (M5): train Jun-Jul, val Aug, test Sep-Oct 2025; V1 chosen by val F1 only; test F1 0.838 (CI 0.834-0.841).
 - [x] Temporal performance change reported honestly. Evidence (M5): same-algorithm test F1 drops from about 0.92 (random) to about 0.84 (temporal) for tree models; single seed, collection effects not separated from drift (see report).
 - [x] Drift method, threshold, and decisions documented. Evidence (M6): `reports/results/drift_report.md`, `drift_calibration.json`; 7 synthetic-fixture tests pass (shifted alerts, unshifted does not); K=17 of 20 calibrated on reference time-block null (3.4% alert rate), 0/10 validation alerts; test period never loaded.
-- [ ] Conditional retraining implemented.
-- [ ] Candidate V2 evaluated against incumbent V1.
-- [ ] Promotion/rejection criteria are explicit and tested.
-- [ ] Static versus adaptive comparison reported with actual results.
+- [x] Conditional retraining implemented. Evidence (M11): `src/adaptivephish/replay.py` (drift/schedule trigger, cooldown, label delay, candidate training on older labelled data); 10 synthetic-stream tests; official replay `reports/results/replay_results.json` (adaptive_sensitivity made 3 attempts, fixed_monthly 1). Retraining is exercised in the replay, not wired to the deployed service.
+- [x] Candidate V2 evaluated against incumbent V1. Evidence (M11): every attempt logs incumbent vs candidate F1/precision/recall/FPR on the gate set plus the paired-bootstrap interval; e.g. fixed_monthly batch 9: gate F1 0.755 vs 0.701, interval [0.041, 0.069], promoted.
+- [x] Promotion/rejection criteria are explicit and tested. Evidence (M11): locked in `params.yaml` and above (lock hash 3127dc13...), `tests/test_replay.py` covers each check blocking promotion, cooldown, label-delay indices, no-gain rejection leaving V1 untouched; `tests/test_replay_lock.py` covers the refusal.
+- [x] Static versus adaptive comparison reported with actual results. Evidence (M11): `reports/results/replay_report.md`: pooled test F1 static 0.8377, adaptive K=17 0.8377 (never alerted), K=10 0.8377 (3 attempts, 0 promotions), fixed monthly 0.8400 (1 promotion). Adaptive arms did not beat static by a meaningful margin; reported as is. Single seed, 19 batches.
 
 ### MLOps
 - [x] GitHub repository and reproducible environment. Evidence (M1): `pip install -e .` OK, `pytest` 1 passed, `ruff check .` All checks passed, `git push -u origin main` created `origin/main` (commit db7396c). Python 3.11.4 in `.venv`. Clean-checkout reproduction: unverified.
@@ -55,11 +55,11 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 ### Monitoring and adaptation
 - [x] Prometheus scrapes actual service metrics. Evidence (M8): target `adaptivephish-api` http://api:8000/metrics health=up (5s interval).
 - [x] Grafana dashboard visualizes those metrics. Evidence (M8): dashboard provisioned from files (uid adaptivephish-api); after ~60 requests, all 8 panel queries run through Grafana's own datasource API returned data (e.g. /predict about 1 req/s, p50 75 ms, p95 99 ms, 422s counted as unparseable_url). Checked via API, not by eyeballing screenshots. Drift/retraining panels not built yet.
-- [ ] Drift monitoring uses URL-derived features and a reference window.
-- [ ] Drift is not incorrectly equated with accuracy loss. Partial (M6): documented in drift_report.md and module docstring; no performance link tested yet.
-- [ ] Candidate retraining and promotion events are traceable.
-- [ ] Rejected candidate leaves incumbent production model intact.
-- [ ] End-to-end replay or production loop is demonstrated honestly.
+- [x] Drift monitoring uses URL-derived features and a reference window. Evidence (M6/M11): drift on 20 URL features against the train-window reference, per batch in the replay (`drift_per_batch` in replay_results.json) and exported to /metrics and Grafana.
+- [x] Drift is not incorrectly equated with accuracy loss. Evidence (M11): across the 19 test batches the drifted-feature count correlates 0.17 with static-V1 F1, while F1 correlates 0.91 with the batch's phishing share; the worst F1 batches had 7-8 drifted features (replay_report.md).
+- [x] Candidate retraining and promotion events are traceable. Evidence (M11): replay_results.json lists every attempt (batch, versions, gate/threshold/train batches, checks, failed reasons, train seconds) and replay_batches.csv records the model version per batch; counters exported as adaptivephish_retrain_attempts_total, _promotions_total, _rejections_total{reason} (tested and read through Grafana's datasource API).
+- [x] Rejected candidate leaves incumbent production model intact. Evidence (M11): adaptive_sensitivity rejected 3 candidates and ends on v1 with all 37,501 rows scored by v1 (replay_results.json); unit test `test_no_improvement_means_rejection_and_incumbent_untouched`.
+- [x] End-to-end replay or production loop is demonstrated honestly. Evidence (M11): one official replay under the locked design (replay_report.md). It is a replay of recorded data, not a live production loop; the deployed EC2 service is not retrained or hot-swapped.
 
 ### Documentation
 - [ ] Setup and reproduction instructions work from a clean checkout.
@@ -102,3 +102,5 @@ Machine-readable copy: `params.yaml` `replay` section; its hash plus `drift.lock
 - DVC remote push FAILED at the end of M5 (403 HeadObject); `aws sts get-caller-identity --profile adaptivephish` now returns InvalidClientTokenId, so the access key appears deleted or rotated. `models/v1` and the new `features.parquet` md5 are therefore NOT on S3. Needs a fresh `aws configure --profile adaptivephish` by the user.
 - V1 reload gate: `load_production()` loaded models/v1/model.joblib and predicted 3 test URLs (probabilities 0.12, 0.93, 0.003).
 - Docker: `docker run hello-world` OK. AWS CLI 2.38.6 present (re-checked 2026-10-27). DVC 3.67.1 installed. AWS profile `adaptivephish` verified by user (sts and s3 ls OK); I did not run those myself.
+
+- M11 monitoring: `/metrics` exports per-arm drift status, drifted-feature count, max PSI, attempts, promotions, rejections by failed check and suppressed triggers when `ADAPTIVEPHISH_LIFECYCLE` points at the replay's state file (compose mounts `artifacts/lifecycle`); 9 new Grafana panels return data via the datasource API. Not on EC2 (documented limitation: no Prometheus/Grafana there).
