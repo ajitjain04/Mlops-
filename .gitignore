@@ -1,0 +1,30 @@
+# Environments and secrets
+.venv/
+venv/
+.env
+*.pem
+*.key
+
+# Python caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Experiment tracking
+mlruns/
+mlflow.db
+
+# Data and model binaries (managed by DVC, never Git)
+/data/*
+!/data/.gitkeep
+/models/*
+!/models/.gitkeep
+!/models/production.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
