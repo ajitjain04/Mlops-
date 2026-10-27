@@ -127,3 +127,24 @@ def test_real_v1_serves_and_versions_match():
         assert h["feature_version"] == meta["feature_version"]
         r = c.post("/predict", json={"url": "https://www.nyc.gov/site/dcas/employment/jobs.page"})
         assert r.status_code == 200 and r.json()["model_version"] == "v1"
+
+
+def test_lifecycle_metrics_exported_only_when_state_file_configured(tmp_path, monkeypatch):
+    from adaptivephish.lifecycle import LifecycleState, new_arm_state
+
+    with TestClient(create_app(loaded=make_loaded())) as c:
+        assert "adaptivephish_promotions" not in c.get("/metrics").text  # nothing invented
+
+    state = LifecycleState(tmp_path / "state.json")
+    s = new_arm_state("v1")
+    s.update(promotions=1, attempts=3, rejections={"recall_margin": 2}, drift_alert=1,
+             drifted_features=18, max_psi=0.9)
+    state.set_arm("adaptive_primary", s)
+    monkeypatch.setenv("ADAPTIVEPHISH_LIFECYCLE", str(tmp_path / "state.json"))
+    with TestClient(create_app(loaded=make_loaded())) as c:
+        text = c.get("/metrics").text
+    assert 'adaptivephish_promotions_total{arm="adaptive_primary"} 1.0' in text
+    assert ('adaptivephish_rejections_total{arm="adaptive_primary",reason="recall_margin"} 2.0'
+            in text)
+    assert 'adaptivephish_drift_status{arm="adaptive_primary"} 1.0' in text
+    assert "adaptivephish_lifecycle_state_ok 1.0" in text

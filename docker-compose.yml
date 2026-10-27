@@ -7,6 +7,11 @@ services:
     image: adaptivephish:${IMAGE_TAG:-dev}
     ports:
       - "127.0.0.1:8000:8000"
+    environment:
+      # drift/retraining state written by scripts/run_replay.py (absent file = nothing exported)
+      ADAPTIVEPHISH_LIFECYCLE: /lifecycle/state.json
+    volumes:
+      - ./artifacts/lifecycle:/lifecycle:ro
     restart: unless-stopped
     networks: [monitoring]
 

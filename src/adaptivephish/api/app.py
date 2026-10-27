@@ -28,6 +28,7 @@ from prometheus_client import (
 from pydantic import BaseModel, Field
 
 from adaptivephish.features.url_features import extract_features
+from adaptivephish.lifecycle import LIFECYCLE_ENV, LifecycleCollector
 from adaptivephish.model_io import PRODUCTION_FILE, LoadedModel, load_production
 
 log = logging.getLogger("adaptivephish.api")
@@ -71,6 +72,9 @@ class Metrics:
             ["model_version", "feature_version"], registry=self.registry)
         self.model_loaded = Gauge(
             "adaptivephish_model_loaded", "1 if a model is loaded", registry=self.registry)
+        # Drift status and retraining/promotion counters written by the replay (see lifecycle.py).
+        # Exported only if ADAPTIVEPHISH_LIFECYCLE points at a state file.
+        self.registry.register(LifecycleCollector(os.environ.get(LIFECYCLE_ENV)))
 
 
 def create_app(loaded: LoadedModel | None = None, production_path: str | None = None) -> FastAPI:
