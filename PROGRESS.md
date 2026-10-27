@@ -15,7 +15,7 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 | M7 FastAPI | done (local uvicorn; container is M8) |
 | M8 Docker + local monitoring | done locally (see evidence) |
 | M9 GitHub Actions CI + image publishing | done (deploy workflow is M10) |
-| M10 AWS EC2 deployment | in progress: deploy.yml written, not yet run |
+| M10 AWS EC2 deployment | done (see evidence); docs in docs/deployment.md |
 | M11 Adaptive loop | not started |
 | M12 Documentation | not started |
 
@@ -48,9 +48,9 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 - [x] Docker image builds and runs. Evidence (M8): `docker compose up -d --build`; image adaptivephish:82da5dc, 1.11 GB on disk (python:3.11-slim, non-root uid 10001, V1 joblib 122 MB baked in, no extra files; `docker history` has no credential strings); container healthcheck `healthy`; /health 200 and /predict 200/422 from the container on 127.0.0.1:8000. Clean-checkout build (needs `dvc pull` for models/v1): unverified.
 - [x] GitHub Actions CI tests pass. Evidence (M9): run 40533354578 on a226708, ruff + 44 pytest (real-V1 test skipped without the model) green on ubuntu/py3.11, no AWS credentials used; image workflow also reran CI via workflow_call.
 - [x] Image is published to the selected registry. Evidence (M9): build-and-push run 40533354628 green (dvc pull with the read-only AWS user, build, container smoke test, push); Docker Hub public API shows 0008a/adaptivephish:a226708 (public repo, linux/amd64, digest sha256:0dce761a...); `docker pull` OK; pulled container: /health model v1 healthy, /predict phishing for a lookalike URL, runs as non-root.
-- [ ] Approved deployment workflow runs.
-- [ ] AWS EC2 service passes health and smoke tests, if cloud access/budget permit.
-- [ ] Deployment version and rollback path are documented.
+- [x] Approved deployment workflow runs. Evidence (M10, user-reported): Deploy to EC2 with tag a226708 passed the production-environment approval, OIDC role assumption, SSM Success and the on-instance smoke test (DEPLOY OK). Earlier failed runs (OIDC sub format, wrong role ARN variable) are in docs/deployment.md. I did not see the run log myself.
+- [x] AWS EC2 service passes health and smoke tests, if cloud access/budget permit. Evidence (M10, checked by me 2026-10-27 from this machine): GET http://15.206.211.173:8000/health returned model_loaded true, model_version v1, feature_version 1.0.0, n_features 26; POST /predict: paypal-lookalike URL gave phishing (score 0.937), nyc.gov URL gave legitimate (0.003), threshold 0.1833. Plain HTTP, reachable only from the operator IP.
+- [x] Deployment version and rollback path are documented. Evidence (M10): docs/deployment.md (current_tag/previous_tag/deployments.log, image_tag=previous rollback, automatic rollback on a failed smoke test, cleanup). Rollback has NOT been exercised yet (only one version deployed): unverified.
 
 ### Monitoring and adaptation
 - [x] Prometheus scrapes actual service metrics. Evidence (M8): target `adaptivephish-api` http://api:8000/metrics health=up (5s interval).
