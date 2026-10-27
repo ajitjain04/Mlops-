@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>AdaptivePhish</title>
+<style>
+:root {
+  --bg: #f6f7f9; --surface: #ffffff; --surface-2: #eef1f5; --text: #14181f; --muted: #5b6573;
+  --border: #d9dee6; --accent: #2457d6; --accent-text: #ffffff;
+  --bad: #b4231a; --bad-bg: #fdecea; --good: #146c3a; --good-bg: #e6f5ec; --warn: #8a5a00; --warn-bg: #fff4dc;
+  --shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 4px 16px rgba(15, 23, 42, .05);
+  --radius: 14px;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e1116; --surface: #161b22; --surface-2: #1d242d; --text: #e8ecf1; --muted: #98a2b0;
+    --border: #2a323d; --accent: #6e9bff; --accent-text: #0b1020;
+    --bad: #ff8a80; --bad-bg: #3a1a18; --good: #6fd49a; --good-bg: #123322; --warn: #f2c26b; --warn-bg: #36290c;
+    --shadow: none;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+.wrap { max-width: 880px; margin: 0 auto; padding: 24px 16px 40px; }
+header h1 { margin: 0; font-size: 1.6rem; letter-spacing: -.01em; }
+header p { margin: 4px 0 0; color: var(--muted); }
+.status {
+  display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin: 18px 0;
+  padding: 10px 14px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); font-size: .9rem;
+}
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); display: inline-block; margin-right: 6px; }
+.dot.ok { background: var(--good); } .dot.err { background: var(--bad); }
+.status .item { color: var(--muted); } .status .item b { color: var(--text); font-weight: 600; }
+[role="tablist"] { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 18px; }
+[role="tab"] {
+  appearance: none; background: none; border: 0; color: var(--muted); font: inherit; font-weight: 600;
+  padding: 10px 14px; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1px;
+}
+[role="tab"][aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+[role="tab"]:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 20px;
+}
+form { display: flex; gap: 10px; flex-wrap: wrap; }
+input[type="text"] {
+  flex: 1 1 280px; min-width: 0; padding: 12px 14px; font: 1rem var(--mono); color: var(--text);
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px;
+}
+.btn {
+  appearance: none; border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+  font: inherit; font-weight: 600; padding: 11px 18px; border-radius: 10px; cursor: pointer;
+}
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+.btn:disabled { opacity: .55; cursor: progress; }
+.examples { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.examples span { color: var(--muted); font-size: .9rem; }
+.chip { font-size: .88rem; padding: 6px 12px; border-radius: 999px; font-weight: 500; }
+.hint { margin: 12px 0 0; color: var(--muted); font-size: .85rem; }
+#result { margin-top: 20px; }
+.verdict {
+  border-radius: var(--radius); padding: 18px 20px; border: 1px solid transparent;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+}
+.verdict.phishing { background: var(--bad-bg); color: var(--bad); border-color: var(--bad); }
+.verdict.legitimate { background: var(--good-bg); color: var(--good); border-color: var(--good); }
+.verdict.error { background: var(--warn-bg); color: var(--warn); border-color: var(--warn); }
+.verdict .big { font-size: 2.2rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+.verdict .sub { font-size: .95rem; opacity: .9; overflow-wrap: anywhere; }
+.verdict .icon { font-size: 2.2rem; line-height: 1; }
+.bar-wrap { margin: 22px 4px 8px; }
+.bar { position: relative; height: 14px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); }
+.bar .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: var(--accent); }
+.bar .fill.phishing { background: var(--bad); } .bar .fill.legitimate { background: var(--good); }
+.bar .mark { position: absolute; top: -6px; bottom: -6px; width: 3px; background: var(--text); border-radius: 2px; }
+.bar-labels { position: relative; height: 22px; margin-top: 8px; font-size: .8rem; color: var(--muted); }
+.bar-labels span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.bar-labels .l0 { left: 0; transform: none; } .bar-labels .l1 { right: 0; left: auto; transform: none; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 14px; }
+.fact { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; }
+.fact dt { font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.fact dd { margin: 2px 0 0; font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+h2 { font-size: 1.05rem; margin: 26px 0 10px; }
+#history { list-style: none; margin: 0; padding: 0; }
+#history li {
+  display: flex; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: .9rem;
+}
+#history li:last-child { border-bottom: 0; }
+#history .u { flex: 1; min-width: 0; font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tag { font-weight: 700; font-size: .78rem; padding: 2px 8px; border-radius: 999px; }
+.tag.phishing { background: var(--bad-bg); color: var(--bad); } .tag.legitimate { background: var(--good-bg); color: var(--good); }
+.score { color: var(--muted); font-variant-numeric: tabular-nums; }
+.empty { color: var(--muted); font-size: .9rem; }
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.takeaway { margin: 16px 0 0; padding: 12px 14px; background: var(--warn-bg); color: var(--warn); border-radius: 10px; font-weight: 600; }
+.notes { margin: 14px 0 0; padding-left: 18px; color: var(--muted); font-size: .9rem; }
+footer { margin-top: 28px; color: var(--muted); font-size: .85rem; text-align: center; }
+footer a { color: var(--accent); }
+[hidden] { display: none !important; }
+@media (max-width: 520px) { .verdict .big { font-size: 1.7rem; } .btn.primary { flex: 1 1 100%; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>AdaptivePhish</h1>
+    <p>Phishing-URL detector. It scores the URL text only: no page is fetched or visited.</p>
+  </header>
+
+  <div class="status" id="status" aria-live="polite">
+    <span><span class="dot" id="status-dot"></span><b id="status-text">Checking service&hellip;</b></span>
+    <span class="item" id="st-version" hidden>Model <b></b></span>
+    <span class="item" id="st-algo" hidden>Algorithm <b></b></span>
+    <span class="item" id="st-features" hidden>Features <b></b></span>
+  </div>
+
+  <div role="tablist" aria-label="Sections">
+    <button role="tab" id="tab-check" aria-controls="panel-check" aria-selected="true">Check a URL</button>
+    <button role="tab" id="tab-life" aria-controls="panel-life" aria-selected="false" tabindex="-1">Lifecycle results</button>
+  </div>
+
+  <section id="panel-check" role="tabpanel" aria-labelledby="tab-check">
+    <div class="card">
+      <form id="form" autocomplete="off">
+        <input type="text" id="url" name="url" aria-label="URL to check" maxlength="4096" placeholder="https://example.com/login" spellcheck="false" autocapitalize="off" required>
+        <button class="btn primary" id="check" type="submit">Check</button>
+      </form>
+      <div class="examples" id="examples"><span>Try an example:</span></div>
+      <p class="hint">Examples are only text sent to the model; nothing is opened. The score is an uncalibrated probability, not a confidence.</p>
+      <div id="result" aria-live="polite"></div>
+    </div>
+    <h2>This session</h2>
+    <div class="card">
+      <ul id="history"></ul>
+      <p class="empty" id="history-empty">No checks yet. History lives only in this tab and is gone on reload.</p>
+      <button class="btn" id="clear" type="button" hidden>Clear history</button>
+    </div>
+  </section>
+
+  <section id="panel-life" role="tabpanel" aria-labelledby="tab-life" hidden>
+    <div class="card">
+      <p id="life-intro" class="empty"></p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th scope="col">Strategy</th><th scope="col">Drift alerts</th><th scope="col">Retrain attempts</th>
+            <th scope="col">Promotions</th><th scope="col">Pooled F1</th>
+          </tr></thead>
+          <tbody id="life-body"></tbody>
+        </table>
+      </div>
+      <p class="takeaway">Drift-triggered retraining did not beat static V1 in this replay.</p>
+      <ul class="notes" id="life-notes"></ul>
+    </div>
+  </section>
+
+  <footer>
+    <p>Controlled replay results; the retraining loop is not live on this server.</p>
+    <p><a href="/docs">API docs</a></p>
+  </footer>
+</div>
+
+<!--REPLAY-DATA-START-->
+<script type="application/json" id="replay-data">
+{
+  "source": "reports/results/replay_results.json",
+  "stream_window": [
+    "2025-09-01",
+    "2025-10-31"
+  ],
+  "n_batches": 19,
+  "rows": 37501,
+  "arms": [
+    {
+      "id": "static_v1",
+      "label": "Static V1",
+      "alerts": 0,
+      "attempts": 0,
+      "promotions": 0,
+      "f1": 0.8377
+    },
+    {
+      "id": "adaptive_primary",
+      "label": "Adaptive, K=17 (primary)",
+      "alerts": 0,
+      "attempts": 0,
+      "promotions": 0,
+      "f1": 0.8377
+    },
+    {
+      "id": "adaptive_sensitivity",
+      "label": "Adaptive, K=10 (sensitivity)",
+      "alerts": 4,
+      "attempts": 3,
+      "promotions": 0,
+      "f1": 0.8377
+    },
+    {
+      "id": "fixed_monthly",
+      "label": "Fixed monthly retrain",
+      "alerts": null,
+      "attempts": 1,
+      "promotions": 1,
+      "f1": 0.84
+    }
+  ],
+  "notes": [
+    "Pooled F1 over all replayed URLs; one seed, one replay, 19 batches.",
+    "The K=17 rule never alerted, so that arm behaved exactly like static V1.",
+    "K=10 made 3 retrain attempts; all were rejected by the fixed promotion checks.",
+    "The monthly schedule promoted one candidate: +0.002 pooled F1, not conclusive."
+  ]
+}
+</script>
+<!--REPLAY-DATA-END-->
+<script>
+(function () {
+  "use strict";
+  var EXAMPLES = [
+    { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Phishing" },
+    { label: "GitHub", url: "https://github.com/ajitjain04/Mlops-" },
+    { label: "PayPal lookalike", url: "http://paypal-secure-login.example-verify.com/signin?id=1" },
+    { label: "IP-address login", url: "http://192.168.10.5/login/verify-account.php" }
+  ];
+  var MAX_HISTORY = 10;
+  var history = [];
+  var $ = function (id) { return document.getElementById(id); };
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined && text !== null) n.textContent = text;
+    return n;
+  }
+  function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+
+  /* ---- tabs ---- */
+  var tabs = [$("tab-check"), $("tab-life")];
+  var panels = [$("panel-check"), $("panel-life")];
+  function selectTab(i) {
+    tabs.forEach(function (t, k) {
+      t.setAttribute("aria-selected", String(k === i));
+      t.tabIndex = k === i ? 0 : -1;
+      panels[k].hidden = k !== i;
+    });
+  }
+  tabs.forEach(function (t, i) {
+    t.addEventListener("click", function () { selectTab(i); });
+    t.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        var j = (i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length;
+        selectTab(j); tabs[j].focus();
+      }
+    });
+  });
+
+  /* ---- status strip ---- */
+  function showStatus(ok, text, h) {
+    $("status-dot").className = "dot " + (ok ? "ok" : "err");
+    $("status-text").textContent = text;
+    var parts = [["st-version", h && h.model_version], ["st-algo", h && h.algorithm],
+                 ["st-features", h && h.n_features !== undefined ? h.n_features + " URL features" : null]];
+    parts.forEach(function (p) {
+      var node = $(p[0]);
+      node.hidden = !p[1];
+      if (p[1]) node.querySelector("b").textContent = p[1];
+    });
+  }
+  function loadHealth() {
+    fetch("/health", { cache: "no-store" })
+      .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }); })
+      .then(function (x) {
+        if (x.status === 200 && x.body.model_loaded) {
+          showStatus(true, "Model loaded", x.body);
+        } else {
+          showStatus(false, "Service up, model not loaded", null);
+        }
+      })
+      .catch(function () { showStatus(false, "Service unreachable", null); });
+  }
+
+  /* ---- result rendering ---- */
+  function pct(x) { return (x * 100).toFixed(1) + "%"; }
+  function showError(msg) {
+    var r = $("result"); clear(r);
+    var v = el("div", "verdict error");
+    v.setAttribute("role", "alert");
+    v.appendChild(el("span", "icon", "!"));
+    var box = el("div");
+    box.appendChild(el("div", "big", "Could not check"));
+    box.appendChild(el("div", "sub", msg));
+    v.appendChild(box); r.appendChild(v);
+  }
+  function showResult(d, ms) {
+    var r = $("result"); clear(r);
+    var bad = d.prediction === "phishing";
+    var v = el("div", "verdict " + d.prediction);
+    v.appendChild(el("span", "icon", bad ? "⚠" : "✓"));
+    var box = el("div");
+    box.appendChild(el("div", "big", bad ? "Phishing" : "Legitimate"));
+    box.appendChild(el("div", "sub", d.url));
+    v.appendChild(box); r.appendChild(v);
+
+    var wrap = el("div", "bar-wrap");
+    var bar = el("div", "bar");
+    bar.setAttribute("role", "img");
+    bar.setAttribute("aria-label", "Score " + d.score.toFixed(3) + ", decision threshold " + d.threshold.toFixed(3));
+    var fill = el("div", "fill " + d.prediction);
+    fill.style.setProperty("width", Math.max(0, Math.min(1, d.score)) * 100 + "%");
+    var mark = el("div", "mark");
+    mark.style.setProperty("left", "calc(" + Math.max(0, Math.min(1, d.threshold)) * 100 + "% - 1px)");
+    bar.appendChild(fill); bar.appendChild(mark); wrap.appendChild(bar);
+    var labels = el("div", "bar-labels");
+    labels.appendChild(el("span", "l0", "0"));
+    var tl = el("span", null, "threshold " + d.threshold.toFixed(2));
+    tl.style.setProperty("left", Math.max(0, Math.min(1, d.threshold)) * 100 + "%");
+    labels.appendChild(tl);
+    labels.appendChild(el("span", "l1", "1"));
+    wrap.appendChild(labels); r.appendChild(wrap);
+
+    var facts = el("dl", "facts");
+    [["Phishing score", d.score.toFixed(3) + " (" + pct(d.score) + ")"],
+     ["Decision threshold", d.threshold.toFixed(3)],
+     ["Model version", d.model_version],
+     ["Feature version", d.feature_version],
+     ["Response time", Math.round(ms) + " ms (round trip)"]].forEach(function (f) {
+      var box2 = el("div", "fact");
+      box2.appendChild(el("dt", null, f[0]));
+      box2.appendChild(el("dd", null, f[1]));
+      facts.appendChild(box2);
+    });
+    r.appendChild(facts);
+  }
+
+  /* ---- history (memory only) ---- */
+  function renderHistory() {
+    var ul = $("history"); clear(ul);
+    history.forEach(function (h) {
+      var li = el("li");
+      li.appendChild(el("span", "tag " + h.prediction, h.prediction === "phishing" ? "Phishing" : "Legitimate"));
+      var u = el("span", "u", h.url); u.title = h.url;
+      li.appendChild(u);
+      li.appendChild(el("span", "score", h.score.toFixed(3)));
+      ul.appendChild(li);
+    });
+    $("history-empty").hidden = history.length > 0;
+    $("clear").hidden = history.length === 0;
+  }
+  $("clear").addEventListener("click", function () { history = []; renderHistory(); });
+
+  /* ---- check ---- */
+  var busy = false;
+  function check(url) {
+    url = url.trim();
+    if (!url || busy) return;
+    busy = true; $("check").disabled = true; $("check").textContent = "Checking…";
+    var t0 = performance.now();
+    fetch("/predict", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: url })
+    }).then(function (r) {
+      var ms = performance.now() - t0;
+      return r.json().catch(function () { return {}; }).then(function (b) {
+        if (r.status === 200) {
+          showResult(b, ms);
+          history.unshift({ url: b.url, prediction: b.prediction, score: b.score });
+          if (history.length > MAX_HISTORY) history.pop();
+          renderHistory();
+        } else if (r.status === 422) {
+          showError("That does not look like a valid URL. Check it and try again (for example https://example.com/path).");
+        } else if (r.status === 503) {
+          showError("The model is not loaded on the server right now, so no verdict is available. Try again shortly.");
+        } else {
+          showError("The server answered with an unexpected status (" + r.status + ").");
+        }
+      });
+    }).catch(function () {
+      showError("Could not reach the server. Check your connection and try again.");
+    }).then(function () {
+      busy = false; $("check").disabled = false; $("check").textContent = "Check";
+      loadHealth();
+    });
+  }
+  $("form").addEventListener("submit", function (e) { e.preventDefault(); check($("url").value); });
+  EXAMPLES.forEach(function (ex) {
+    var b = el("button", "btn chip", ex.label);
+    b.type = "button"; b.title = ex.url;
+    b.addEventListener("click", function () { $("url").value = ex.url; check(ex.url); });
+    $("examples").appendChild(b);
+  });
+
+  /* ---- lifecycle tab (static replay data embedded in the page) ---- */
+  function renderLifecycle() {
+    var data;
+    try { data = JSON.parse($("replay-data").textContent); } catch (e) { data = null; }
+    if (!data || !data.arms) { $("life-intro").textContent = "Replay data is not available."; return; }
+    $("life-intro").textContent = "Replay of the held-out test period (" + data.stream_window[0] + " to " +
+      data.stream_window[1] + "): " + data.rows.toLocaleString("en-US") + " URLs in " + data.n_batches +
+      " time-ordered batches. Strategies, thresholds and promotion rules were fixed before the run.";
+    var body = $("life-body"); clear(body);
+    data.arms.forEach(function (a) {
+      var tr = el("tr");
+      tr.appendChild(el("td", null, a.label));
+      tr.appendChild(el("td", null, a.alerts === null ? "n/a (schedule)" : String(a.alerts)));
+      tr.appendChild(el("td", null, String(a.attempts)));
+      tr.appendChild(el("td", null, String(a.promotions)));
+      tr.appendChild(el("td", null, a.f1.toFixed(4)));
+      body.appendChild(tr);
+    });
+    var notes = $("life-notes"); clear(notes);
+    (data.notes || []).forEach(function (n) { notes.appendChild(el("li", null, n)); });
+  }
+
+  renderHistory();
+  renderLifecycle();
+  loadHealth();
+  if (location.hash === "#lifecycle") selectTab(1);
+})();
+</script>
+</body>
+</html>

@@ -105,6 +105,8 @@ Machine-readable copy: `params.yaml` `replay` section; its hash plus `drift.lock
 
 - M11 monitoring: `/metrics` exports per-arm drift status, drifted-feature count, max PSI, attempts, promotions, rejections by failed check and suppressed triggers when `ADAPTIVEPHISH_LIFECYCLE` points at the replay's state file (compose mounts `artifacts/lifecycle`); 9 new Grafana panels return data via the datasource API. Not on EC2 (documented limitation: no Prometheus/Grafana there).
 
+- Web UI (post-M12): `GET /` serves one self-contained page (HTML/CSS/vanilla JS, no CDN) from the same FastAPI app with a hash-based Content-Security-Policy; `/docs`, `/health`, `/predict`, `/metrics` unchanged. Evidence: 8 new tests in tests/test_frontend.py (71 passed in total, ruff clean); the page JS was run against a stubbed DOM with mocked fetch (verdict, bar, 422/503/network messages, history, and hostile text rendered as text); headless Chrome rendered the status strip (model v1, random_forest, 26 features) and the lifecycle table from the rebuilt container; `/predict` worked in the container. Not verified: a real-browser click-through of a check result, and a true 390 px mobile layout (headless Chrome enforces a wider minimum window). Not deployed to EC2.
+
 ## Final status (M12)
 
 All checklist items are ticked. Items ticked with a stated limitation (documented in README 'Limitations'):

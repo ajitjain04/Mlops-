@@ -243,6 +243,14 @@ docker compose up -d --build
 Grafana http://127.0.0.1:3000, Prometheus http://127.0.0.1:9090, API http://127.0.0.1:8000
 (`/health`, `/predict`, `/metrics`, `/docs`). `score` is an uncalibrated phishing probability.
 
+**Web UI:** open `/` on the API (for example http://127.0.0.1:8000/). It is one self-contained page
+(`src/adaptivephish/api/static/index.html`; no build step, no CDN, works offline) served by the same FastAPI app:
+a URL checker with a verdict, score bar and threshold marker, a status strip from `/health`, a session-only
+history (kept in memory, never stored or logged), and a "Lifecycle results" tab with the four-arm replay table.
+The table is a trimmed copy of `replay_results.json`; refresh it with `python scripts/embed_replay_data.py`
+(a test fails if it drifts). `/#lifecycle` opens that tab directly. The page states that the retraining loop is
+not live on the server.
+
 ## CI/CD and AWS deployment
 
 | Workflow | Trigger | What it does |
@@ -259,8 +267,8 @@ rollback (`image_tag=previous`), the problems met during the first deployment, a
 
 About 15 minutes. Run from the project root with the venv active.
 
-1. **API:** `docker compose up -d --build`, then `curl /health` and two `/predict` calls (a phishing-style URL
-   and `https://www.nyc.gov/site/dcas/employment/jobs.page`). Show `/docs`.
+1. **API and UI:** `docker compose up -d --build`, open http://127.0.0.1:8000/ and use the example buttons;
+   then `curl /health` and a `/predict` call. Show `/docs`.
 2. **Pipeline and data versioning:** `dvc dag`, `dvc status`, `type params.yaml`; mention the S3 remote.
 3. **Experiments:** `mlflow ui --backend-store-uri sqlite:///mlflow.db` (author's machine; the store is not in
    the repo) and the [random vs temporal figure](reports/figures/f1_random_vs_temporal.png).

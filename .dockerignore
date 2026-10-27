@@ -3,6 +3,7 @@
 !pyproject.toml
 !requirements-serve.txt
 !src/adaptivephish/
+!src/adaptivephish/api/static/
 !models/production.json
 !models/v1/model.joblib
 **/__pycache__

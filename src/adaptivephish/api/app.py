@@ -10,13 +10,18 @@ score >= the validation-selected threshold stored in models/production.json, els
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import logging
 import os
+import re
 import time
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.responses import HTMLResponse
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
     CollectorRegistry,
@@ -34,7 +39,29 @@ from adaptivephish.model_io import PRODUCTION_FILE, LoadedModel, load_production
 log = logging.getLogger("adaptivephish.api")
 
 MAX_URL_LENGTH = 4096
+INDEX_PAGE = Path(__file__).parent / "static" / "index.html"
 LABELS = {1: "phishing", 0: "legitimate"}
+
+
+def _csp_hash(code: str) -> str:
+    return "'sha256-" + base64.b64encode(hashlib.sha256(code.encode()).digest()).decode() + "'"
+
+
+def load_index_page(path: Path = INDEX_PAGE) -> tuple[str, dict[str, str]]:
+    """Read the single-file frontend once and build headers: a CSP that allows only its own inline
+    script and style (by hash), same-origin requests, and nothing else."""
+    html = path.read_text(encoding="utf-8")
+    scripts = re.findall(r"<script>(.*?)</script>", html, flags=re.S)
+    styles = re.findall(r"<style>(.*?)</style>", html, flags=re.S)
+    csp = "; ".join([
+        "default-src 'none'",
+        "script-src " + " ".join(_csp_hash(c) for c in scripts),
+        "style-src " + " ".join(_csp_hash(c) for c in styles),
+        "connect-src 'self'", "img-src 'self' data:", "base-uri 'none'", "form-action 'none'",
+        "frame-ancestors 'none'",
+    ])
+    return html, {"Content-Security-Policy": csp, "X-Content-Type-Options": "nosniff",
+                  "Referrer-Policy": "no-referrer", "Cache-Control": "no-cache"}
 
 
 class PredictRequest(BaseModel):
@@ -103,6 +130,7 @@ def create_app(loaded: LoadedModel | None = None, production_path: str | None = 
         yield
 
     app = FastAPI(title="AdaptivePhish", version="0.1.0", lifespan=lifespan)
+    index_html, index_headers = load_index_page()
     app.state.metrics = metrics
     app.state.model = None
 
@@ -122,6 +150,11 @@ def create_app(loaded: LoadedModel | None = None, production_path: str | None = 
             endpoint = route.path if route else "unmatched"
             metrics.requests.labels(endpoint, str(status)).inc()
             metrics.latency.labels(endpoint).observe(time.perf_counter() - start)
+
+    @app.get("/", include_in_schema=False)
+    def index():
+        """Self-contained frontend (no build step, no CDN); calls this same origin's API."""
+        return HTMLResponse(index_html, headers=index_headers)
 
     @app.get("/health")
     def health(response: Response):
