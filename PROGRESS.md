@@ -15,7 +15,7 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 | M7 FastAPI | done (local uvicorn; container is M8) |
 | M8 Docker + local monitoring | done locally (see evidence) |
 | M9 GitHub Actions CI + image publishing | done (deploy workflow is M10) |
-| M10 AWS EC2 deployment | not started |
+| M10 AWS EC2 deployment | in progress: deploy.yml written, not yet run |
 | M11 Adaptive loop | not started |
 | M12 Documentation | not started |
 
