@@ -70,6 +70,11 @@ FEATURE_NAMES: tuple[str, ...] = (
 # (the API must accept any URL) but models should be evaluated with and without them.
 DATASET_ARTIFACT_FEATURES: tuple[str, ...] = ("query_len", "fragment_len", "n_params")
 
+# Default feature vector for production models: everything except the artifact features.
+PRODUCTION_FEATURE_NAMES: tuple[str, ...] = tuple(
+    n for n in FEATURE_NAMES if n not in DATASET_ARTIFACT_FEATURES
+)
+
 # Characters counted by n_special_chars: anything not alphanumeric and not one of the
 # structural characters already counted separately (. - / : ?).
 _STRUCTURAL = set(".-/:?")
@@ -163,4 +168,8 @@ def extract_features_df(urls: Iterable[str | None]) -> pd.DataFrame:
 
 def feature_schema() -> dict[str, object]:
     """Schema recorded with trained models and checked at serving time."""
-    return {"feature_version": FEATURE_VERSION, "feature_names": list(FEATURE_NAMES)}
+    return {
+        "feature_version": FEATURE_VERSION,
+        "feature_names": list(FEATURE_NAMES),
+        "production_feature_names": list(PRODUCTION_FEATURE_NAMES),
+    }

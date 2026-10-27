@@ -1,0 +1,63 @@
+{
+  "model_version": "v1",
+  "model_path": "models/v1/model.joblib",
+  "algorithm": "random_forest",
+  "hyperparameters": {
+    "n_estimators": 300,
+    "max_depth": null,
+    "min_samples_leaf": 1
+  },
+  "threshold": 0.18333333333333332,
+  "positive_class": "phish (y=1)",
+  "feature_version": "1.0.0",
+  "feature_names": [
+    "url_len",
+    "host_len",
+    "path_len",
+    "n_dots",
+    "n_hyphens",
+    "n_digits",
+    "n_special_chars",
+    "n_subdomains",
+    "path_depth",
+    "n_percent_encoded",
+    "is_https",
+    "host_is_ip",
+    "host_has_port",
+    "has_userinfo",
+    "has_at_symbol",
+    "host_is_idn",
+    "host_n_hyphens",
+    "host_n_digits",
+    "host_longest_label",
+    "tld_len",
+    "digit_ratio",
+    "letter_ratio",
+    "host_digit_ratio",
+    "url_entropy",
+    "host_entropy",
+    "parse_ok"
+  ],
+  "excluded_features": [
+    "query_len",
+    "fragment_len",
+    "n_params"
+  ],
+  "dataset_revision": "eca603e0ecd4f698f8d4d226c088659e72681239",
+  "subset_sha256": "aa62bfce92a5abe278586f01a8ba854ebd48ca1d70d780d3253cc79065a09aeb",
+  "features_dvc_md5": "89e251ecf88360080ee72257403443a5",
+  "train_period": "2025-06-05..2025-07-31 n=31485",
+  "val_period": "2025-08-01..2025-08-31 n=20000",
+  "validation_metrics": {
+    "f1": 0.8618684461391801,
+    "precision": 0.8234061930783242,
+    "recall": 0.9041,
+    "roc_auc": 0.9416500049999998,
+    "fpr": 0.1939
+  },
+  "mlflow_tracking_uri": "sqlite:///mlflow.db",
+  "mlflow_run_id": "cbb5b7cc41c541b99011bc1ab4527a0d",
+  "selection_rule": "max validation F1 among temporal-split production-feature models",
+  "git_commit": "7ab6318988456da8e449642bc7ab9ef6492ad333",
+  "git_dirty": "True"
+}

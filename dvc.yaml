@@ -28,3 +28,25 @@ stages:
     metrics:
       - reports/results/feature_schema.json:
           cache: false
+  train:
+    cmd: python scripts/run_experiments.py
+    deps:
+      - scripts/run_experiments.py
+      - src/adaptivephish/features/url_features.py
+      - data/processed/features.parquet
+      - reports/results/subset_manifest.json
+    params:
+      - train
+    outs:
+      - models/v1
+      - models/production.json:
+          cache: false
+      - reports/results/feature_diagnostics.csv:
+          cache: false
+      - reports/results/v1_permutation_importance_val.csv:
+          cache: false
+      - reports/figures/f1_random_vs_temporal.png:
+          cache: false
+    metrics:
+      - reports/results/experiments_summary.json:
+          cache: false

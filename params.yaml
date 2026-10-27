@@ -10,3 +10,26 @@ subset:
     "2025-08": val
     "2025-09": test
     "2025-10": test
+
+train:
+  seed: 42
+  # Features dropped from the production feature set (dataset collection artifact, see
+  # reports/results/feature_report.md). Must match PRODUCTION_FEATURE_NAMES in the code.
+  exclude_features: [query_len, fragment_len, n_params]
+  mlflow_experiment_temporal: adaptivephish-temporal
+  mlflow_experiment_random: adaptivephish-random-split
+  grids:
+    logreg:
+      C: [0.1, 1.0, 10.0]
+    random_forest:
+      n_estimators: [300]
+      max_depth: [null, 20]
+      min_samples_leaf: [1, 3]
+    xgboost:
+      n_estimators: [300]
+      max_depth: [4, 6]
+      learning_rate: [0.1]
+    lightgbm:
+      n_estimators: [300]
+      num_leaves: [31, 63]
+      learning_rate: [0.1]
