@@ -1,0 +1,9 @@
+# Deny everything, then allow only what the serving image needs.
+*
+!pyproject.toml
+!requirements-serve.txt
+!src/adaptivephish/
+!models/production.json
+!models/v1/model.joblib
+**/__pycache__
+**/*.pyc

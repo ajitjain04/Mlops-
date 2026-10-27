@@ -13,7 +13,7 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 | M5 Experiments A and B + MLflow | done (V1 = random forest); V1 artifact not on DVC remote (see notes) |
 | M6 Drift detection | done; rule LOCKED (K=17) 2026-10-27 |
 | M7 FastAPI | done (local uvicorn; container is M8) |
-| M8 Docker + local monitoring | not started |
+| M8 Docker + local monitoring | done locally (see evidence) |
 | M9 GitHub Actions CI + image publishing | not started |
 | M10 AWS EC2 deployment | not started |
 | M11 Adaptive loop | not started |
@@ -45,7 +45,7 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 ### Production and delivery
 - [x] FastAPI health and prediction endpoints work. Evidence (M7): `uvicorn adaptivephish.api.app:app_factory --factory` served V1; GET /health 200 (model v1, feature 1.0.0, 26 features); POST /predict nyc.gov URL -> legitimate (score 0.003), paypal-lookalike -> phishing (0.71), `http://[::1` -> 422; /metrics counters matched those calls; 16 API tests pass (44 total), ruff clean.
 - [ ] Shared feature code and model schema match training. Partial (M7): API uses `extract_features` and `load_production`, which refuses a feature_version mismatch (tested); schema check against the trained model's own input signature not added.
-- [ ] Docker image builds and runs.
+- [x] Docker image builds and runs. Evidence (M8): `docker compose up -d --build`; image adaptivephish:82da5dc, 1.11 GB on disk (python:3.11-slim, non-root uid 10001, V1 joblib 122 MB baked in, no extra files; `docker history` has no credential strings); container healthcheck `healthy`; /health 200 and /predict 200/422 from the container on 127.0.0.1:8000. Clean-checkout build (needs `dvc pull` for models/v1): unverified.
 - [ ] GitHub Actions CI tests pass.
 - [ ] Image is published to the selected registry.
 - [ ] Approved deployment workflow runs.
@@ -53,8 +53,8 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 - [ ] Deployment version and rollback path are documented.
 
 ### Monitoring and adaptation
-- [ ] Prometheus scrapes actual service metrics.
-- [ ] Grafana dashboard visualizes those metrics.
+- [x] Prometheus scrapes actual service metrics. Evidence (M8): target `adaptivephish-api` http://api:8000/metrics health=up (5s interval).
+- [x] Grafana dashboard visualizes those metrics. Evidence (M8): dashboard provisioned from files (uid adaptivephish-api); after ~60 requests, all 8 panel queries run through Grafana's own datasource API returned data (e.g. /predict about 1 req/s, p50 75 ms, p95 99 ms, 422s counted as unparseable_url). Checked via API, not by eyeballing screenshots. Drift/retraining panels not built yet.
 - [ ] Drift monitoring uses URL-derived features and a reference window.
 - [ ] Drift is not incorrectly equated with accuracy loss. Partial (M6): documented in drift_report.md and module docstring; no performance link tested yet.
 - [ ] Candidate retraining and promotion events are traceable.
@@ -81,6 +81,9 @@ Arms to run and report together on the same test-period batches (`params.yaml` `
 All arms report the same metrics whatever the outcome, including the number of retrains, accepted and rejected candidates, and performance trajectories. Acceptance criteria for promotion are to be written before the replay starts and recorded here.
 
 ## Environment notes
+
+- Docker Desktop disk image lives on D:\DockerData (C: was full). Keep C: above 2 GB free.
+- Local monitoring: copy `.env.example` to `.env` (gitignored), set GRAFANA_ADMIN_PASSWORD; Grafana http://127.0.0.1:3000, Prometheus http://127.0.0.1:9090, API http://127.0.0.1:8000.
 
 - DVC remote push FAILED at the end of M5 (403 HeadObject); `aws sts get-caller-identity --profile adaptivephish` now returns InvalidClientTokenId, so the access key appears deleted or rotated. `models/v1` and the new `features.parquet` md5 are therefore NOT on S3. Needs a fresh `aws configure --profile adaptivephish` by the user.
 - V1 reload gate: `load_production()` loaded models/v1/model.joblib and predicted 3 test URLs (probabilities 0.12, 0.93, 0.003).
