@@ -6,7 +6,7 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 
 | Milestone | Status |
 |---|---|
-| M1 Repo and environment | in progress |
+| M1 Repo and environment | done (see evidence below) |
 | M2 Dataset verification and subset | not started |
 | M3 DVC | not started |
 | M4 Shared URL features | not started |
@@ -35,7 +35,7 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 - [ ] Static versus adaptive comparison reported with actual results.
 
 ### MLOps
-- [ ] GitHub repository and reproducible environment.
+- [x] GitHub repository and reproducible environment. Evidence (M1): `pip install -e .` OK, `pytest` 1 passed, `ruff check .` All checks passed, `git push -u origin main` created `origin/main` (commit db7396c). Python 3.11.4 in `.venv`. Clean-checkout reproduction: unverified.
 - [ ] DVC data/artifact tracking.
 - [ ] DVC remote configured and retrieval tested, if storage access is available.
 - [ ] Reproducible DVC pipeline and parameters.
@@ -67,3 +67,7 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 - [ ] Results, limitations, and costs are documented.
 - [ ] No secrets or sensitive values are committed.
 - [ ] All completion claims are supported by test/log/experiment evidence.
+
+## Environment notes
+
+- Docker: not found on PATH (needed from M8). AWS CLI: not found (needed from M3). DVC: not yet installed (M3).
