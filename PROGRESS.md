@@ -12,7 +12,7 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 | M4 Shared URL features | done; first consumers arrive in M5/M7 |
 | M5 Experiments A and B + MLflow | done (V1 = random forest); V1 artifact not on DVC remote (see notes) |
 | M6 Drift detection | done; rule LOCKED (K=17) 2026-10-27 |
-| M7 FastAPI | not started |
+| M7 FastAPI | done (local uvicorn; container is M8) |
 | M8 Docker + local monitoring | not started |
 | M9 GitHub Actions CI + image publishing | not started |
 | M10 AWS EC2 deployment | not started |
@@ -43,8 +43,8 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 - [ ] Data/code/feature/model/deployment versions are traceable.
 
 ### Production and delivery
-- [ ] FastAPI health and prediction endpoints work.
-- [ ] Shared feature code and model schema match training.
+- [x] FastAPI health and prediction endpoints work. Evidence (M7): `uvicorn adaptivephish.api.app:app_factory --factory` served V1; GET /health 200 (model v1, feature 1.0.0, 26 features); POST /predict nyc.gov URL -> legitimate (score 0.003), paypal-lookalike -> phishing (0.71), `http://[::1` -> 422; /metrics counters matched those calls; 16 API tests pass (44 total), ruff clean.
+- [ ] Shared feature code and model schema match training. Partial (M7): API uses `extract_features` and `load_production`, which refuses a feature_version mismatch (tested); schema check against the trained model's own input signature not added.
 - [ ] Docker image builds and runs.
 - [ ] GitHub Actions CI tests pass.
 - [ ] Image is published to the selected registry.
