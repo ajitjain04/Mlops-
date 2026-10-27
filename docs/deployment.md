@@ -48,7 +48,21 @@ Check from outside: `curl http://15.206.211.173:8000/health`.
   `docker rm -f adaptivephish-api; docker run -d --name adaptivephish-api --restart unless-stopped -p 8000:8000 0008a/adaptivephish:$(cat /opt/adaptivephish/previous_tag)`
 - Limit: only one previous version is remembered. Older ones can be re-pulled from Docker Hub by tag (tags are
   short SHAs and never `latest`).
-- Status: rollback has not been exercised yet, because only one version has been deployed.
+- Status: exercised once on 2026-10-28 (see below).
+
+### Rollback test (2026-10-28)
+
+1. Deploy run with `image_tag` = `3dc1367`: green, log showed `DEPLOY OK: 3dc1367` (user-reported).
+2. Deploy run with `image_tag` = `previous`: green, log showed `DEPLOY OK: a226708` (user-reported), i.e. the
+   `previous_tag` file correctly pointed at the version deployed before.
+3. After the rollback I checked from outside: `GET /health` 200 (model_loaded true, v1, feature_version 1.0.0,
+   26 features); `POST /predict` 200 for a phishing-style URL (phishing, 0.937) and for nyc.gov (legitimate, 0.003);
+   `/metrics` showed `adaptivephish_model_loaded 1`.
+
+Limits of this evidence: both tags contain the same V1 model, so it tests the deploy and rollback mechanics, not a
+model change. The API does not report the image tag, so I could not confirm `a226708` from outside; that rests on
+the workflow log (and on `current_tag` / `deployments.log` on the instance, which I did not read). An improvement
+would be to expose the image tag in `/health`.
 
 ## Problems met during the first deployment (and fixes)
 
