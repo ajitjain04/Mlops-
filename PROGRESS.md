@@ -16,15 +16,15 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 | M8 Docker + local monitoring | done locally (see evidence) |
 | M9 GitHub Actions CI + image publishing | done (deploy workflow is M10) |
 | M10 AWS EC2 deployment | done (see evidence); docs in docs/deployment.md |
-| M11 Adaptive loop | replay done and reported (see evidence); dashboard/metrics verified locally; README/final docs are M12 |
-| M12 Documentation | not started |
+| M11 Adaptive loop | done: replay reported honestly (see evidence); dashboard/metrics verified locally |
+| M12 Documentation | done (README, evidence, clean-checkout check); see Final status below |
 
 ## Acceptance checklist (spec section 22)
 
 
 ### Research and ML
 - [x] Dataset provenance, license/terms, schema, labels, dates, duplicates, and class balance documented. Evidence (M2): `reports/results/dataset_report.md`; `scripts/inspect_dataset.py` read all 77 shards (666,315 rows, revision eca603e0); `scripts/build_subset.py` gives 88,986 rows, identical subset_sha256 on two runs. Key finding: class and date are confounded (no benign Nov 2024-May 2025), so the window is 2025-06..10. Near-duplicate check: only exact/normalized URL.
-- [ ] URL-only feature extraction shared between training and inference. Partial (M4): shared module + 19 passing tests + `featurize` stage; not yet used by a model or the API. Finding: query/fragment features are a dataset artifact (see `reports/results/feature_report.md`).
+- [x] URL-only feature extraction shared between training and inference. Evidence (M4/M7/M12): one module `src/adaptivephish/features/url_features.py` is used by `featurize` (training) and by the API; `tests/test_feature_parity.py` recomputes features for 500 random subset URLs through the serving extractor and they equal the stored training features (`assert_allclose`); 19 feature tests. Limitation: URL-only by design, so no page content.
 - [x] Random-split baseline evaluated. Evidence (M5): `dvc repro` train stage; 4 algorithms x 2 feature sets, best test F1 0.924-0.928 for tree models; `reports/results/experiments_report.md`.
 - [x] Chronological temporal experiment evaluated. Evidence (M5): train Jun-Jul, val Aug, test Sep-Oct 2025; V1 chosen by val F1 only; test F1 0.838 (CI 0.834-0.841).
 - [x] Temporal performance change reported honestly. Evidence (M5): same-algorithm test F1 drops from about 0.92 (random) to about 0.84 (temporal) for tree models; single seed, collection effects not separated from drift (see report).
@@ -40,11 +40,11 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 - [x] DVC remote configured and retrieval tested, if storage access is available. Evidence (M3): remote `s3://adaptivephish-dvc-ajit-2026/dvc` (ap-south-1, profile in gitignored `.dvc/config.local`); `dvc push` 2 files pushed; deleted `data/interim`, `data/processed` and `.dvc/cache`, `dvc pull` fetched 2 files, sha256 of both identical to before, `dvc status` clean.
 - [x] Reproducible DVC pipeline and parameters. Evidence (M3/M4): `params.yaml` (subset section) wired into `dvc.yaml`; changing `cap_per_month_label` made `dvc status` report `params.yaml: modified subset`; `dvc repro` with defaults gave subset_sha256 aa62bfce... again; stages fetch_meta, build_subset, featurize.
 - [x] MLflow runs record parameters, metrics, and artifacts. Evidence (M5): local sqlite store, 22 random-split and 24 temporal runs with params, tags (git commit, subset hash, feature version), val metrics, train seconds; model artifacts and test metrics on the 8 selected runs per experiment; reloaded V1 via `runs:/<id>/model`. Store is local only (not shared).
-- [ ] Data/code/feature/model/deployment versions are traceable.
+- [x] Data/code/feature/model/deployment versions are traceable. Evidence (M12): `models/production.json` records dataset revision, subset sha256, features md5, feature_version, git commit and MLflow run id; `dvc.lock` pins data/code/params hashes; image tag = git short SHA; `/health` reports model_version and feature_version; EC2 keeps `current_tag`/`previous_tag`/`deployments.log`. Limitations: the MLflow store is local only, and `/health` does not report the image tag.
 
 ### Production and delivery
 - [x] FastAPI health and prediction endpoints work. Evidence (M7): `uvicorn adaptivephish.api.app:app_factory --factory` served V1; GET /health 200 (model v1, feature 1.0.0, 26 features); POST /predict nyc.gov URL -> legitimate (score 0.003), paypal-lookalike -> phishing (0.71), `http://[::1` -> 422; /metrics counters matched those calls; 16 API tests pass (44 total), ruff clean.
-- [ ] Shared feature code and model schema match training. Partial (M7): API uses `extract_features` and `load_production`, which refuses a feature_version mismatch (tested); schema check against the trained model's own input signature not added.
+- [x] Shared feature code and model schema match training. Evidence (M7/M12): `load_production` refuses a feature_version mismatch (tested); `tests/test_feature_parity.py::test_model_feature_list_matches_code_and_estimator` checks the stored feature list equals `PRODUCTION_FEATURE_NAMES` and the estimator's `n_features_in_`; serving/training feature parity test above. Limitation: no per-column dtype/range signature check.
 - [x] Docker image builds and runs. Evidence (M8): `docker compose up -d --build`; image adaptivephish:82da5dc, 1.11 GB on disk (python:3.11-slim, non-root uid 10001, V1 joblib 122 MB baked in, no extra files; `docker history` has no credential strings); container healthcheck `healthy`; /health 200 and /predict 200/422 from the container on 127.0.0.1:8000. Clean-checkout build (needs `dvc pull` for models/v1): unverified.
 - [x] GitHub Actions CI tests pass. Evidence (M9): run 40533354578 on a226708, ruff + 44 pytest (real-V1 test skipped without the model) green on ubuntu/py3.11, no AWS credentials used; image workflow also reran CI via workflow_call.
 - [x] Image is published to the selected registry. Evidence (M9): build-and-push run 40533354628 green (dvc pull with the read-only AWS user, build, container smoke test, push); Docker Hub public API shows 0008a/adaptivephish:a226708 (public repo, linux/amd64, digest sha256:0dce761a...); `docker pull` OK; pulled container: /health model v1 healthy, /predict phishing for a lookalike URL, runs as non-root.
@@ -62,11 +62,11 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 - [x] End-to-end replay or production loop is demonstrated honestly. Evidence (M11): one official replay under the locked design (replay_report.md). It is a replay of recorded data, not a live production loop; the deployed EC2 service is not retrained or hot-swapped.
 
 ### Documentation
-- [ ] Setup and reproduction instructions work from a clean checkout.
-- [ ] Architecture and pipeline diagrams match the implementation.
-- [ ] Results, limitations, and costs are documented.
-- [ ] No secrets or sensitive values are committed.
-- [ ] All completion claims are supported by test/log/experiment evidence.
+- [x] Setup and reproduction instructions work from a clean checkout. Evidence (M12, 2026-10-28, fresh `git clone` of 46dcc48 into a sibling folder): new venv, `pip install -r requirements-dev.txt` and `-e .`; ruff clean; 62 passed, 1 skipped before `dvc pull`; `dvc remote modify --local storage profile adaptivephish` + `dvc pull` fetched 6 files; 63 passed after; replay lock verified; the official replay re-run in the clone gave results identical to the committed ones (ignoring timings); `docker build` from the clone then `/health` (model v1) and `/predict` (phishing 0.937) worked. Defect found and fixed: `dvc status` in the clone listed 4 stages as changed because 4 scripts had CRLF line endings when `dvc.lock` hashed them (Git stores LF); converted them to LF and ran `dvc commit -f` (only dependency hashes changed). Not done: a from-scratch `dvc repro` of the whole pipeline from Hugging Face (unverified), and a read-only IAM user for others (policy documented in README, not created).
+- [x] Architecture and pipeline diagrams match the implementation. Evidence (M12): README keeps the teammates' high-level diagram and adds an 'As implemented' Mermaid diagram (DVC stages, three workflows, EC2, local compose monitoring, replay-only loop) checked against `dvc.yaml`, `.github/workflows/` and `docker-compose.yml`. The original diagram implies a live retrain/promote loop; the README states that loop is replay-only.
+- [x] Results, limitations, and costs are documented. Evidence (M12): README sections 'Results and hypotheses' (H1 supported with caveats, H2 weak, H3 not supported), 'Limitations', 'Costs and AWS cleanup checklist'; `reports/results/*_report.md`; `docs/deployment.md`. Costs are rough published rates, not billing data (none available to me).
+- [x] No secrets or sensitive values are committed. Evidence (M12): `git grep` of tracked files and `git log -G` over history for AWS access-key IDs, `dckr_pat_`, `ghp_`/`github_pat_`, private-key headers and Slack tokens found nothing; no `.env`, `config.local` or credentials files are tracked; workflows reference secrets by name only; Grafana password only in the gitignored `.env`. Not secret but identifying: AWS account ID, instance ID and public IP appear in docs/deployment.md. The DVC bucket name is in `.dvc/config`. This is a pattern scan, not a guarantee.
+- [x] All completion claims are supported by test/log/experiment evidence. Every tick above cites a command, file or test. Claims that rest on the project owner's report rather than my own observation: the Deploy to EC2 run logs (DEPLOY OK for a226708, 3dc1367, rollback), the AWS/GitHub console setup, and the secret/variable values. I verified the running service myself over HTTP. No screenshots exist; the README lists them as 'to be added'.
 
 ## Pre-registration for M11 (fixed 2026-10-27, before any test-period replay)
 
@@ -99,8 +99,16 @@ Machine-readable copy: `params.yaml` `replay` section; its hash plus `drift.lock
 - Docker Desktop disk image lives on D:\DockerData (C: was full). Keep C: above 2 GB free.
 - Local monitoring: copy `.env.example` to `.env` (gitignored), set GRAFANA_ADMIN_PASSWORD; Grafana http://127.0.0.1:3000, Prometheus http://127.0.0.1:9090, API http://127.0.0.1:8000.
 
-- DVC remote push FAILED at the end of M5 (403 HeadObject); `aws sts get-caller-identity --profile adaptivephish` now returns InvalidClientTokenId, so the access key appears deleted or rotated. `models/v1` and the new `features.parquet` md5 are therefore NOT on S3. Needs a fresh `aws configure --profile adaptivephish` by the user.
+- Resolved: the M5 DVC push failed (403) because the AWS key had been rotated; the owner created a new key, `dvc push` then succeeded and `dvc status -c` is in sync (M6).
 - V1 reload gate: `load_production()` loaded models/v1/model.joblib and predicted 3 test URLs (probabilities 0.12, 0.93, 0.003).
 - Docker: `docker run hello-world` OK. AWS CLI 2.38.6 present (re-checked 2026-10-27). DVC 3.67.1 installed. AWS profile `adaptivephish` verified by user (sts and s3 ls OK); I did not run those myself.
 
 - M11 monitoring: `/metrics` exports per-arm drift status, drifted-feature count, max PSI, attempts, promotions, rejections by failed check and suppressed triggers when `ADAPTIVEPHISH_LIFECYCLE` points at the replay's state file (compose mounts `artifacts/lifecycle`); 9 new Grafana panels return data via the datasource API. Not on EC2 (documented limitation: no Prometheus/Grafana there).
+
+## Final status (M12)
+
+All checklist items are ticked. Items ticked with a stated limitation (documented in README 'Limitations'):
+H3 not supported and H2 weak (reported results, not failures of the work); MLflow store local only; no
+Prometheus/Grafana on EC2; plain HTTP on EC2; one seed and one replay; high FPR (~0.21); K=17 conservative;
+from-scratch `dvc repro` and a created read-only IAM user not verified; README Team table placeholders belong to
+teammates; screenshots to be added; cleanup of AWS resources is the owner's to-do (checklist in README).
