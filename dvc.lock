@@ -22,8 +22,21 @@ stages:
       size: 45974265
     - path: scripts/build_subset.py
       hash: md5
-      md5: 748968352225f7303fdbc6f14e66f70c
-      size: 3409
+      md5: 7a6cbf153ba15d9b78635f413a47f00e
+      size: 3529
+    params:
+      params.yaml:
+        subset:
+          seed: 42
+          window_start: '2025-06-01'
+          window_end: '2025-10-31'
+          cap_per_month_label: 10000
+          roles_by_month:
+            2025-06: train
+            2025-07: train
+            2025-08: val
+            2025-09: test
+            2025-10: test
     outs:
     - path: data/processed/subset.parquet
       hash: md5

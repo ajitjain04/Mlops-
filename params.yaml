@@ -1,0 +1,12 @@
+subset:
+  seed: 42
+  window_start: "2025-06-01"
+  window_end: "2025-10-31"
+  cap_per_month_label: 10000
+  # Chronological roles by month; no shuffling across roles.
+  roles_by_month:
+    "2025-06": train
+    "2025-07": train
+    "2025-08": val
+    "2025-09": test
+    "2025-10": test

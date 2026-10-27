@@ -1,8 +1,8 @@
 """Build the chronological research subset from the metadata table.
 
-Window, cap and cut points were chosen after inspecting the date x label table
-(see reports/results/dataset_report.md): only 2025-06..2025-10 has both classes
-in every month at useful volume.
+Window, cap and cut points live in params.yaml (section "subset"). They were chosen
+after inspecting the date x label table (see reports/results/dataset_report.md): only
+2025-06..2025-10 has both classes in every month at useful volume.
 """
 
 from __future__ import annotations
@@ -14,13 +14,9 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 import pandas as pd
+import yaml
 
-SEED = 42
-WINDOW = ("2025-06-01", "2025-10-31")
-CAP_PER_MONTH_LABEL = 10_000
-# Chronological roles by month; no shuffling across roles.
-ROLES = {"2025-06": "train", "2025-07": "train", "2025-08": "val", "2025-09": "test",
-         "2025-10": "test"}
+PARAMS_PATH = "params.yaml"
 
 
 def norm_url(u: str) -> str:
@@ -39,7 +35,15 @@ def main() -> None:
     ap.add_argument("--meta", default="data/interim/phreshphish_meta.parquet")
     ap.add_argument("--out", default="data/processed/subset.parquet")
     ap.add_argument("--manifest", default="reports/results/subset_manifest.json")
+    ap.add_argument("--params", default=PARAMS_PATH)
     args = ap.parse_args()
+
+    with open(args.params) as f:
+        P = yaml.safe_load(f)["subset"]
+    SEED = P["seed"]
+    WINDOW = (P["window_start"], P["window_end"])
+    CAP_PER_MONTH_LABEL = P["cap_per_month_label"]
+    ROLES = P["roles_by_month"]
 
     df = pd.read_parquet(args.meta, columns=["sha256", "url", "label", "date", "split"])
     df["date"] = pd.to_datetime(df["date"])

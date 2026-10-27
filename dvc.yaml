@@ -10,6 +10,8 @@ stages:
     deps:
       - scripts/build_subset.py
       - data/interim/phreshphish_meta.parquet
+    params:
+      - subset
     outs:
       - data/processed/subset.parquet
     metrics:
