@@ -1,0 +1,46 @@
+{
+  "dataset": "phreshphish/phreshphish",
+  "dataset_revision": "eca603e0ecd4f698f8d4d226c088659e72681239",
+  "license": "CC-BY-4.0 (anti-phishing research use only)",
+  "seed": 42,
+  "window": [
+    "2025-06-01",
+    "2025-10-31"
+  ],
+  "cap_per_month_label": 10000,
+  "roles_by_month": {
+    "2025-06": "train",
+    "2025-07": "train",
+    "2025-08": "val",
+    "2025-09": "test",
+    "2025-10": "test"
+  },
+  "rows_in_window": 283094,
+  "rows_after_url_dedup": 283094,
+  "rows_subset": 88986,
+  "counts": {
+    "test|benign": 20000,
+    "test|phish": 17501,
+    "train|benign": 16760,
+    "train|phish": 14725,
+    "val|benign": 10000,
+    "val|phish": 10000
+  },
+  "per_month_label": {
+    "2025-06|benign": 6760,
+    "2025-06|phish": 4725,
+    "2025-07|benign": 10000,
+    "2025-07|phish": 10000,
+    "2025-08|benign": 10000,
+    "2025-08|phish": 10000,
+    "2025-09|benign": 10000,
+    "2025-09|phish": 7501,
+    "2025-10|benign": 10000,
+    "2025-10|phish": 10000
+  },
+  "host_overlap": {
+    "val_rows_with_host_in_train": 0.2544,
+    "test_rows_with_host_in_train": 0.2253
+  },
+  "subset_sha256": "aa62bfce92a5abe278586f01a8ba854ebd48ca1d70d780d3253cc79065a09aeb"
+}

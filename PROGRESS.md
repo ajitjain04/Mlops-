@@ -7,7 +7,7 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 | Milestone | Status |
 |---|---|
 | M1 Repo and environment | done (see evidence below) |
-| M2 Dataset verification and subset | not started |
+| M2 Dataset verification and subset | done except DVC tracking (M3); see evidence below |
 | M3 DVC | not started |
 | M4 Shared URL features | not started |
 | M5 Experiments A and B + MLflow | not started |
@@ -23,7 +23,7 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 
 
 ### Research and ML
-- [ ] Dataset provenance, license/terms, schema, labels, dates, duplicates, and class balance documented.
+- [x] Dataset provenance, license/terms, schema, labels, dates, duplicates, and class balance documented. Evidence (M2): `reports/results/dataset_report.md`; `scripts/inspect_dataset.py` read all 77 shards (666,315 rows, revision eca603e0); `scripts/build_subset.py` gives 88,986 rows, identical subset_sha256 on two runs. Key finding: class and date are confounded (no benign Nov 2024-May 2025), so the window is 2025-06..10. Near-duplicate check: only exact/normalized URL.
 - [ ] URL-only feature extraction shared between training and inference.
 - [ ] Random-split baseline evaluated.
 - [ ] Chronological temporal experiment evaluated.
@@ -70,4 +70,4 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 
 ## Environment notes
 
-- Docker: not found on PATH (needed from M8). AWS CLI: not found (needed from M3). DVC: not yet installed (M3).
+- Docker: `docker run hello-world` OK. AWS CLI 2.38.6 present (re-checked 2026-10-27). DVC: not yet installed (M3). AWS credentials/`aws sts get-caller-identity`: unverified.
