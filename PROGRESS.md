@@ -114,3 +114,4 @@ H3 not supported and H2 weak (reported results, not failures of the work); MLflo
 Prometheus/Grafana on EC2; plain HTTP on EC2; one seed and one replay; high FPR (~0.21); K=17 conservative;
 from-scratch `dvc repro` and a created read-only IAM user not verified; README Team table placeholders belong to
 teammates; screenshots to be added; cleanup of AWS resources is the owner's to-do (checklist in README).
+- [x] Web UI deployed to EC2: image tag 7ac35e8, Deploy to EC2 run #8 green (approved on `production`); page served at `/` on the EC2 instance, `/docs`, `/health`, `/predict`, `/metrics` unchanged. Verified in a browser by the project owner.

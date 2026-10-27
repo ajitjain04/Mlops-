@@ -348,3 +348,4 @@ When finished with demos, tick these off (details in [docs/deployment.md](docs/d
 - [ ] Keep the S3 bucket `adaptivephish-dvc-ajit-2026` while `dvc pull` and CI builds must work; otherwise empty and delete it.
 - [ ] Delete the Docker Hub repository if it is no longer needed.
 - [ ] Locally: `docker compose down -v`, and remove `.env` if it holds a password you reuse.
+1. Open the web UI at `http://<EC2_PUBLIC_IP>:8000/`. Check the status strip (model loaded, v1, random_forest, 26 URL features), click the four example URLs (expect legitimate for Wikipedia and GitHub, phishing for the PayPal look-alike and the IP-address login), then open the "Lifecycle results" tab for the static vs adaptive table. `/docs` remains available as the raw API page.
