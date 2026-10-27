@@ -17,3 +17,14 @@ stages:
     metrics:
       - reports/results/subset_manifest.json:
           cache: false
+  featurize:
+    cmd: python scripts/build_features.py
+    deps:
+      - scripts/build_features.py
+      - src/adaptivephish/features/url_features.py
+      - data/processed/subset.parquet
+    outs:
+      - data/processed/features.parquet
+    metrics:
+      - reports/results/feature_schema.json:
+          cache: false

@@ -46,3 +46,27 @@ stages:
       hash: md5
       md5: 9a7b6d6dc2ce9911a370528977956c96
       size: 1219
+  featurize:
+    cmd: python scripts/build_features.py
+    deps:
+    - path: data/processed/subset.parquet
+      hash: md5
+      md5: 36930342626ed86654fc3ea6749b80b8
+      size: 8940234
+    - path: scripts/build_features.py
+      hash: md5
+      md5: 5a53e5640b1eb7bc090753d166b5e83f
+      size: 1241
+    - path: src/adaptivephish/features/url_features.py
+      hash: md5
+      md5: 5622eb4cb54de5c5e336bf1596809be5
+      size: 6160
+    outs:
+    - path: data/processed/features.parquet
+      hash: md5
+      md5: 1c7f245e8944c49641bb2ca8560d07a2
+      size: 7532283
+    - path: reports/results/feature_schema.json
+      hash: md5
+      md5: 6d50d4f17d9ad0a74bc6ca5c696a84d9
+      size: 753
