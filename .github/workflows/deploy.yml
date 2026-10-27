@@ -44,6 +44,20 @@ jobs:
       - name: Require the tag to exist on Docker Hub
         if: inputs.image_tag != 'previous'
         run: curl -sf "https://hub.docker.com/v2/repositories/$IMAGE_REPO/tags/$INPUT_TAG" | grep -q '"name"'
+      - name: TEMP DEBUG - OIDC claims and role ARN shape (no token printed)
+        env:
+          ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+        run: |
+          tok=$(curl -sf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | jq -r .value)
+          echo "::add-mask::$tok"
+          payload=$(echo "$tok" | cut -d. -f2 | tr '_-' '/+')
+          while [ $(( ${#payload} % 4 )) -ne 0 ]; do payload="$payload="; done
+          echo "$payload" | base64 -d | jq '{sub, aud, iss, environment, repository}'
+          echo "ARN length: ${#ROLE_ARN}"
+          echo "ARN first12: ${ROLE_ARN:0:12}"
+          echo "ARN last12: ${ROLE_ARN: -12}"
+          printf '%s' "$ROLE_ARN" | od -c | tail -3
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
