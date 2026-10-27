@@ -11,7 +11,7 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 | M3 DVC | done (see evidence below) |
 | M4 Shared URL features | done; first consumers arrive in M5/M7 |
 | M5 Experiments A and B + MLflow | done (V1 = random forest); V1 artifact not on DVC remote (see notes) |
-| M6 Drift detection | done; rule is conservative, K choice pending user review |
+| M6 Drift detection | done; rule LOCKED (K=17) 2026-10-27 |
 | M7 FastAPI | not started |
 | M8 Docker + local monitoring | not started |
 | M9 GitHub Actions CI + image publishing | not started |
@@ -67,6 +67,18 @@ Items are ticked only with evidence (command run and key output). "unverified" =
 - [ ] Results, limitations, and costs are documented.
 - [ ] No secrets or sensitive values are committed.
 - [ ] All completion claims are supported by test/log/experiment evidence.
+
+## Pre-registration for M11 (fixed 2026-10-27, before any test-period replay)
+
+Locked drift rule (`params.yaml` `drift.locked`): K=17 of 20 tested features, PSI floor 0.1, Bonferroni at alpha 0.05, batch size 2,000. No threshold, K, acceptance criterion or arm may change after test-period replay results are seen; any later deviation must be reported as a deviation.
+
+Arms to run and report together on the same test-period batches (`params.yaml` `replay.arms`):
+1. **static_v1**: V1 never retrained.
+2. **adaptive_primary**: retrain when the K=17 drift rule alerts; promote only if the candidate passes the fixed acceptance rules.
+3. **adaptive_sensitivity**: same as primary with K=10.
+4. **fixed_monthly**: retrain on a fixed monthly schedule regardless of drift; same acceptance rules.
+
+All arms report the same metrics whatever the outcome, including the number of retrains, accepted and rejected candidates, and performance trajectories. Acceptance criteria for promotion are to be written before the replay starts and recorded here.
 
 ## Environment notes
 

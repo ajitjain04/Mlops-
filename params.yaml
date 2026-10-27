@@ -43,3 +43,18 @@ drift:
   null_repeats: 100        # iid hold-out batches drawn from the reference
   null_block_stride: 500   # stride (rows) of contiguous time blocks inside the reference
   max_null_alert_rate: 0.05
+  # LOCKED 2026-10-27, before any drift statistic was computed on the test period.
+  # Do not edit after test-period replay results are seen. See reports/results/drift_report.md.
+  locked:
+    min_drifted_features: 17   # K, primary rule (calibrated on reference time-block null)
+    psi_threshold: 0.1         # PSI floor per feature
+    correction: bonferroni     # over tested features, family-wise alpha below
+    alpha: 0.05
+
+# Pre-registered arms for the M11 replay on the held-out test period (fixed 2026-10-27).
+replay:
+  arms:
+    - {name: static_v1, trigger: none}
+    - {name: adaptive_primary, trigger: drift, min_drifted_features: 17}
+    - {name: adaptive_sensitivity, trigger: drift, min_drifted_features: 10}
+    - {name: fixed_monthly, trigger: schedule, period: monthly}

@@ -41,6 +41,9 @@ def main() -> None:
     args = ap.parse_args()
 
     P = yaml.safe_load(Path(args.params).read_text())["drift"]
+    locked = P["locked"]
+    assert locked["psi_threshold"] == P["psi_threshold"] and locked["alpha"] == P["alpha"]
+    assert locked["correction"] == "bonferroni"  # the only correction implemented
     seed = yaml.safe_load(Path(args.params).read_text())["train"]["seed"]
     feats = list(PRODUCTION_FEATURE_NAMES)
     df = pd.read_parquet(args.features, filters=[("role", "in", ["train", "val"])])
@@ -49,6 +52,7 @@ def main() -> None:
     va = df[df.role == "val"].sort_values(["date", "sha256"]).reset_index(drop=True)
     B = P["batch_size"]
     cfg = DriftConfig(P["psi_bins"], P["psi_threshold"], P["alpha"], 1, P["min_variation"])
+    cfg_k = locked["min_drifted_features"]
     ref = build_reference(tr, feats, cfg)
     ref.data.to_parquet(args.out_ref, index=False)
     rng = np.random.default_rng(seed)
@@ -74,7 +78,13 @@ def main() -> None:
     k_table = {
         k: float((null_counts >= k).mean()) for k in range(1, n_tested + 1)
     }
-    K = next(k for k in range(1, n_tested + 1) if k_table[k] <= P["max_null_alert_rate"])
+    derived_k = next(k for k in range(1, n_tested + 1) if k_table[k] <= P["max_null_alert_rate"])
+    if derived_k != cfg_k:
+        raise SystemExit(
+            f"calibration derives K={derived_k} but params.yaml locks K={cfg_k}; the locked "
+            "rule must not change after test-period replay is planned. Investigate the cause."
+        )
+    K = cfg_k
 
     # validation batches (reported, not used to choose K)
     val_rows = []
@@ -105,7 +115,7 @@ def main() -> None:
         "iid_null_n_drifted_distribution": np.bincount(iid).tolist(),
         "time_block_null": {
             "n_blocks": len(blocks), "n_drifted": null_counts.tolist(),
-            "alert_rate_by_K": k_table, "chosen_K": K,
+            "alert_rate_by_K": k_table, "chosen_K": K, "derived_K": derived_k, "locked": True,
             "max_allowed_alert_rate": P["max_null_alert_rate"],
             "note": "overlapping blocks (stride < batch size); about "
                     f"{len(tr) // B} independent blocks, so rates are coarse",

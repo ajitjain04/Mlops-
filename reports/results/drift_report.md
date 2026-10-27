@@ -21,3 +21,8 @@ Code: `src/adaptivephish/drift.py`; calibration: `scripts/calibrate_drift.py` (D
 
 ## Decision for you
 The calibrated K=17 follows the stated procedure but is conservative. If you want a more sensitive trigger for the adaptive loop (for example K=10, 2/10 validation alerts, 31% null rate), that is a one-line change in the calibration rule, and it should be chosen before any test-period replay.
+
+## Locked rule (fixed 2026-10-27)
+The primary rule is fixed: K = 17 of 20 tested features, per-feature PSI >= 0.1, Bonferroni correction over the tested features at family-wise alpha 0.05, batch size 2,000. It is recorded under `drift.locked` in `params.yaml`, and `scripts/calibrate_drift.py` now fails if recalibration derives a different K. These values were fixed before any drift statistic was computed on the test period, and no threshold may change after test-period results are seen. For transparency: M5 already scored V1's F1 on the test period (reported in `experiments_report.md`), but that did not feed into any drift setting.
+
+Two further arms are pre-registered for the M11 replay (see `replay.arms` in `params.yaml` and PROGRESS.md): a K=10 sensitivity arm and a fixed monthly retraining baseline. They are reported next to the primary arm, whatever the outcome.

@@ -165,8 +165,8 @@ stages:
       size: 7532283
     - path: scripts/calibrate_drift.py
       hash: md5
-      md5: a523eac9a8e5bf86ae96330f21ab47a1
-      size: 6652
+      md5: 494d4a3b1da5fd0cab6996db1870fa96
+      size: 7358
     - path: src/adaptivephish/drift.py
       hash: md5
       md5: 6cf834b77bc8d1195a45d62c99c36e36
@@ -186,6 +186,11 @@ stages:
           null_repeats: 100
           null_block_stride: 500
           max_null_alert_rate: 0.05
+          locked:
+            min_drifted_features: 17
+            psi_threshold: 0.1
+            correction: bonferroni
+            alpha: 0.05
         train.seed: 42
     outs:
     - path: data/processed/drift_reference.parquet
@@ -198,5 +203,5 @@ stages:
       size: 67100
     - path: reports/results/drift_calibration.json
       hash: md5
-      md5: 7a6a50fee302de5dbbfb5644a24a518c
-      size: 6512
+      md5: 606cc468aeaaee692f738853fe51124c
+      size: 6555

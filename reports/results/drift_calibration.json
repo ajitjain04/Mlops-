@@ -129,6 +129,8 @@
       "20": 0.0
     },
     "chosen_K": 17,
+    "derived_K": 17,
+    "locked": true,
     "max_allowed_alert_rate": 0.05,
     "note": "overlapping blocks (stride < batch size); about 15 independent blocks, so rates are coarse"
   },
