@@ -100,3 +100,7 @@ auto-assigned, so it **changes after a stop/start**; update URLs and the smoke-t
   versioned objects), delete the bucket, then delete IAM users `adaptivephish-dvc` and `adaptivephish-ci` and their keys.
 - Docker Hub: delete the repository `0008a/adaptivephish` if it is no longer needed.
 - Set an AWS Budgets alert so forgotten resources get noticed.
+## Troubleshooting
+- API unreachable from a new network: add your current IP (/32) to the security group on port 8000.
+- Deploy fails with "docker: command not found": install Docker on the EC2 instance.
+- Deploy fails with "Not authorized to perform sts:AssumeRoleWithWebIdentity": check the OIDC trust policy and the AWS_DEPLOY_ROLE_ARN secret.
