@@ -354,3 +354,12 @@ When finished with demos, tick these off (details in [docs/deployment.md](docs/d
 1. Copy .env.example to .env and set GRAFANA_ADMIN_PASSWORD.
 2. Run: docker compose up -d --build
 3. API: http://127.0.0.1:8000/docs | Prometheus: :9090 | Grafana: :300
+
+## Project structure
+- src/ - API, feature extraction, training and drift code
+- tests/ - unit tests
+- docs/ - deployment and project documentation
+- monitoring/ - Prometheus and Grafana configuration
+- scripts/ - replay and helper scripts
+- reports/ - experiment and replay results
+- .github/workflows/ - CI, build-and-push and deploy pipelines
