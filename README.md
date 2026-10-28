@@ -349,3 +349,8 @@ When finished with demos, tick these off (details in [docs/deployment.md](docs/d
 - [ ] Delete the Docker Hub repository if it is no longer needed.
 - [ ] Locally: `docker compose down -v`, and remove `.env` if it holds a password you reuse.
 1. Open the web UI at `http://<EC2_PUBLIC_IP>:8000/`. Check the status strip (model loaded, v1, random_forest, 26 URL features), click the four example URLs (expect legitimate for Wikipedia and GitHub, phishing for the PayPal look-alike and the IP-address login), then open the "Lifecycle results" tab for the static vs adaptive table. `/docs` remains available as the raw API page.
+
+## How to run locally
+1. Copy .env.example to .env and set GRAFANA_ADMIN_PASSWORD.
+2. Run: docker compose up -d --build
+3. API: http://127.0.0.1:8000/docs | Prometheus: :9090 | Grafana: :300
